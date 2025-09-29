@@ -26,7 +26,7 @@ namespace GenesysMigrationMCP.Functions
 
         [Function("MCPEndpoint")]
         public async Task<HttpResponseData> HandleMCPRequest(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", "options", Route = "mcp")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Function, "post", "options", Route = "mcp")] HttpRequestData req)
         {
             try
             {
