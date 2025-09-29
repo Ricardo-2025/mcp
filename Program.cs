@@ -61,24 +61,24 @@ var host = new HostBuilder()
         Console.WriteLine($"Debug - Dynamics:CertificatePath: {(string.IsNullOrEmpty(dynCertPath) ? "VAZIO" : dynCertPath)}");
         Console.WriteLine($"Debug - Dynamics:CertificateThumbprint: {(string.IsNullOrEmpty(dynCertThumb) ? "VAZIO" : "CONFIGURADO")}");
 
-        // HttpClient
+        // HttpClient.
         services.AddHttpClient();
 
-        // Logging
+        // Logging.
         services.AddLogging(builder =>
         {
             builder.AddConsole();
             builder.AddDebug();
         });
 
-        // Configuração de segurança
+        // Configuração de segurança.
         services.AddSecurityConfiguration(configuration);
         services.AddScoped<ISecurityService, SecurityService>();
 
-        // Serviços de logging/monitoramento
+        // Serviços de logging/monitoramento.
         services.AddScoped<ILoggingService, LoggingService>();
 
-        // Registrar clientes com factory (remova o AddScoped<> duplicado sem factory)
+        // Registrar clientes com factory (remova o AddScoped<> duplicado sem factory).
         services.AddScoped<GenesysCloudClient>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
