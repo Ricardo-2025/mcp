@@ -32,7 +32,7 @@
 //   }
 // }
 
-// Exemplo de uso com cliente MCP em Python:
+// Exemplo de uso com cliente MCP em Python - AGORA COM GERENCIAMENTO DE SESSÕES:
 // import requests
 // import json
 // 
@@ -55,9 +55,31 @@
 //     headers={"Content-Type": "application/json"}
 // )
 // 
+// # Agora o session_id é retornado tanto no header quanto no resultado
 // session_id = response.headers.get("Mcp-Session-Id")
+// result = response.json()
+// if "result" in result and "sessionId" in result["result"]:
+//     session_id = result["result"]["sessionId"]
 // 
-// # 2. Usar ferramentas com session ID
+// print(f"Session ID: {session_id}")
+// 
+// # 2. Enviar notificação initialized (não retorna resposta)
+// initialized_payload = {
+//     "jsonrpc": "2.0",
+//     "method": "notifications/initialized"
+// }
+// 
+// response = requests.post(
+//     "http://localhost:7072/api/mcp",
+//     json=initialized_payload,
+//     headers={
+//         "Content-Type": "application/json",
+//         "Mcp-Session-Id": session_id
+//     }
+// )
+// print(f"Initialized response status: {response.status_code}")
+// 
+// # 3. Usar ferramentas com session ID (a sessão será mantida)
 // tool_payload = {
 //     "jsonrpc": "2.0",
 //     "id": 2,
@@ -78,3 +100,71 @@
 //         "Mcp-Session-Id": session_id
 //     }
 // )
+// 
+// # 4. Verificar informações da sessão
+// session_info_payload = {
+//     "jsonrpc": "2.0",
+//     "id": 3,
+//     "method": "session/info"
+// }
+// 
+// response = requests.post(
+//     "http://localhost:7072/api/mcp",
+//     json=session_info_payload,
+//     headers={
+//         "Content-Type": "application/json",
+//         "Mcp-Session-Id": session_id
+//     }
+// )
+// 
+// session_info = response.json()
+// print(f"Session info: {json.dumps(session_info, indent=2)}")
+// 
+// # 5. Listar todas as sessões ativas (útil para debug)
+// list_sessions_payload = {
+//     "jsonrpc": "2.0",
+//     "id": 4,
+//     "method": "session/list"
+// }
+// 
+// response = requests.post(
+//     "http://localhost:7072/api/mcp",
+//     json=list_sessions_payload,
+//     headers={
+//         "Content-Type": "application/json",
+//         "Mcp-Session-Id": session_id
+//     }
+// )
+// 
+// sessions_list = response.json()
+// print(f"Active sessions: {json.dumps(sessions_list, indent=2)}")
+// 
+// # 6. Terminar sessão explicitamente
+// terminate_payload = {
+//     "jsonrpc": "2.0",
+//     "id": 5,
+//     "method": "session/terminate"
+// }
+// 
+// response = requests.post(
+//     "http://localhost:7072/api/mcp",
+//     json=terminate_payload,
+//     headers={
+//         "Content-Type": "application/json",
+//         "Mcp-Session-Id": session_id
+//     }
+// )
+// 
+// print(f"Session terminated: {response.json()}")
+
+// Exemplo de teste de timeout de sessão:
+// # Aguardar mais de 30 minutos (timeout configurado) e tentar usar a sessão
+// # A sessão deve ser automaticamente invalidada
+// 
+// # Ou configurar um timeout menor no appsettings.json:
+// # {
+// #   "Session": {
+// #     "SessionTimeoutMinutes": 2,
+// #     "CleanupIntervalMinutes": 1
+// #   }
+// # }
