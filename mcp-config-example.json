@@ -1,0 +1,80 @@
+{
+  "mcpServers": {
+    "azure-mcp-server": {
+      "command": "curl",
+      "args": [
+        "-X", "POST",
+        "-H", "Content-Type: application/json",
+        "-H", "Accept: application/json, text/event-stream",
+        "--data-binary", "@-",
+        "http://localhost:7072/api/mcp"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}
+
+// Configuração alternativa para VS Code (settings.json):
+// {
+//   "mcp.servers": {
+//     "azure-mcp-server": {
+//       "transport": {
+//         "type": "http",
+//         "url": "http://localhost:7072/api/mcp",
+//         "headers": {
+//           "Content-Type": "application/json",
+//           "Accept": "application/json, text/event-stream"
+//         }
+//       }
+//     }
+//   }
+// }
+
+// Exemplo de uso com cliente MCP em Python:
+// import requests
+// import json
+// 
+// # 1. Inicializar sessão
+// init_payload = {
+//     "jsonrpc": "2.0",
+//     "id": 1,
+//     "method": "initialize",
+//     "params": {
+//         "protocolVersion": "2025-03-26",
+//         "capabilities": {
+//             "tools": {}
+//         }
+//     }
+// }
+// 
+// response = requests.post(
+//     "http://localhost:7072/api/mcp",
+//     json=init_payload,
+//     headers={"Content-Type": "application/json"}
+// )
+// 
+// session_id = response.headers.get("Mcp-Session-Id")
+// 
+// # 2. Usar ferramentas com session ID
+// tool_payload = {
+//     "jsonrpc": "2.0",
+//     "id": 2,
+//     "method": "tools/call",
+//     "params": {
+//         "name": "process_question",
+//         "arguments": {
+//             "question": "que horas são?"
+//         }
+//     }
+// }
+// 
+// response = requests.post(
+//     "http://localhost:7072/api/mcp",
+//     json=tool_payload,
+//     headers={
+//         "Content-Type": "application/json",
+//         "Mcp-Session-Id": session_id
+//     }
+// )

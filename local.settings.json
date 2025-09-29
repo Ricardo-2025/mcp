@@ -1,0 +1,24 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "GenesysCloud__ClientId": "557cefc3-b118-40ef-8a78-ba4ec837b2fd",
+    "GenesysCloud__ClientSecret": "NWUpd2PXrb3mA3MRTv6pBQ6zjm0r0GNnYw3bmSBp1po",
+    "GenesysCloud__Region": "us-west-2",
+    "GenesysCloud__Environment": "https://apps.usw2.pure.cloud",
+    "GenesysCloud__AuthUrl": "https://login.usw2.pure.cloud/oauth/token",
+    "GenesysCloud__ApiUrl": "https://api.usw2.pure.cloud",
+    "DynamicsTenantId": "d2f14a40-7f24-475d-b6b3-67ea354c63fc",
+    "DynamicsClientId": "a88a2983-f7ed-4376-8708-b87812c21133",
+    "DynamicsCertificateThumbprint": "35EC1CE94E02B31C222C8B5820FBAAE2AD825AA5",
+    "DynamicsCertificatePath": "C:\\cd\\Genesys\\V2\\mcs_serverGDnt\\FINAL\\certificates\\GenesysMigrationApp.pfx",
+    "DynamicsCertificatePassword": "SuaSenhaSegura123!",
+    "DynamicsBaseUrl": "https://orga884c2fa.crm.dynamics.com",
+    "MCP__ServerName": "GenesysMigrationMCP",
+    "MCP__Version": "1.0.0",
+    "MCP__Description": "MCP Server para migração Genesys para Dynamics Contact Center",
+    "MCP_API_KEY": "default-dev-key-123",
+    "MCP_ADMIN_KEY": "admin-dev-key-456"
+  }
+}
