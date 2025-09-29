@@ -13,14 +13,13 @@ namespace GenesysMigrationMCP.Functions
     public class MCPServerFunction
     {
         private readonly IMcpService _mcpService;
+        private readonly ISessionService _sessionService;
         private readonly ILogger<MCPServerFunction> _logger;
 
-        // Armazena sessões ativas e último "ping" (initialized/requests)
-        private static readonly Dictionary<string, DateTime> _sessions = new();
-
-        public MCPServerFunction(IMcpService mcpService, ILogger<MCPServerFunction> logger)
+        public MCPServerFunction(IMcpService mcpService, ISessionService sessionService, ILogger<MCPServerFunction> logger)
         {
             _mcpService = mcpService;
+            _sessionService = sessionService;
             _logger = logger;
         }
 
@@ -44,14 +43,14 @@ namespace GenesysMigrationMCP.Functions
                 _logger.LogInformation("MCP request received");
 
                 // Extrai/gera Session-Id
-                string sessionId = GetSessionId(req) ?? Guid.NewGuid().ToString();
+                string sessionId = GetSessionId(req) ?? await _sessionService.CreateSessionAsync();
                 _logger.LogInformation("Processing request for session: {SessionId}", sessionId);
 
                 // Corpo da requisição
                 string requestBody = await req.ReadAsStringAsync();
                 if (string.IsNullOrEmpty(requestBody))
                 {
-                    return await CreateErrorResponse(req, null, -32600, "Invalid Request", "Request body is empty");
+                    return await CreateErrorResponse(req, sessionId, -32600, "Invalid Request", "Request body is empty");
                 }
 
                 // Desserializa JSON-RPC
@@ -63,15 +62,15 @@ namespace GenesysMigrationMCP.Functions
                 catch (System.Text.Json.JsonException ex)
                 {
                     _logger.LogError(ex, "Failed to deserialize MCP request");
-                    return await CreateErrorResponse(req, null, -32700, "Parse error", "Invalid JSON");
+                    return await CreateErrorResponse(req, sessionId, -32700, "Parse error", "Invalid JSON");
                 }
 
                 if (mcpRequest == null || string.IsNullOrWhiteSpace(mcpRequest.Method))
                 {
-                    return await CreateErrorResponse(req, null, -32600, "Invalid Request", "Request is null or method missing");
+                    return await CreateErrorResponse(req, sessionId, -32600, "Invalid Request", "Request is null or method missing");
                 }
 
-                _logger.LogInformation("MCP {Method} (id: {Id})", mcpRequest.Method, mcpRequest.Id ?? "<notification>");
+                _logger.LogInformation("MCP {Method} (id: {Id}) for session {SessionId}", mcpRequest.Method, mcpRequest.Id ?? "<notification>", sessionId);
 
                 // Processa o pedido (pode retornar null para notificações)
                 var response = await ProcessMCPRequest(mcpRequest, req, sessionId);
@@ -85,7 +84,7 @@ namespace GenesysMigrationMCP.Functions
                     noContent.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Mcp-Session-Id, Authorization");
                     noContent.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");
                     noContent.Headers.Add("Mcp-Session-Id", sessionId);
-                    _sessions[sessionId] = DateTime.UtcNow;
+                    await _sessionService.UpdateSessionActivityAsync(sessionId);
                     return noContent;
                 }
 
@@ -102,14 +101,15 @@ namespace GenesysMigrationMCP.Functions
                 result.Headers.Add("Mcp-Session-Id", sessionId);
 
                 await result.WriteStringAsync(jsonResponse);
-                _sessions[sessionId] = DateTime.UtcNow;
+                await _sessionService.UpdateSessionActivityAsync(sessionId);
 
                 return result;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error processing MCP request");
-                return await CreateErrorResponse(req, null, -32603, "Internal error", ex.Message);
+                var sessionId = GetSessionId(req);
+                return await CreateErrorResponse(req, sessionId, -32603, "Internal error", ex.Message);
             }
         }
 
@@ -126,12 +126,12 @@ namespace GenesysMigrationMCP.Functions
                     {
                         case "notifications/initialized":
                             _logger.LogInformation("MCP: notifications/initialized recebido (sessão {SessionId})", sessionId);
-                            _sessions[sessionId] = DateTime.UtcNow; // marca como ativa
+                            await _sessionService.UpdateSessionActivityAsync(sessionId);
                             return null;
 
                         case "notifications/exit":
                             _logger.LogInformation("MCP: notifications/exit recebido (sessão {SessionId})", sessionId);
-                            // opcional: limpar recursos da sessão
+                            await _sessionService.RemoveSessionAsync(sessionId);
                             return null;
 
                         default:
@@ -143,8 +143,9 @@ namespace GenesysMigrationMCP.Functions
                 // 🔹 Para chamadas RPC (com id), valide sessão (exceto initialize)
                 if (!string.Equals(request.Method, "initialize", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (string.IsNullOrEmpty(sessionId) || !_sessions.ContainsKey(sessionId))
+                    if (!await _sessionService.ValidateSessionAsync(sessionId))
                     {
+                        _logger.LogWarning("Invalid or expired session: {SessionId} for method: {Method}", sessionId, request.Method);
                         return new MCPResponse
                         {
                             Id = request.Id,
@@ -159,7 +160,7 @@ namespace GenesysMigrationMCP.Functions
                 }
 
                 // Atualiza timestamp da sessão
-                _sessions[sessionId] = DateTime.UtcNow;
+                await _sessionService.UpdateSessionActivityAsync(sessionId);
 
                 // Dispatcher de métodos
                 object? result = request.Method switch
@@ -170,7 +171,9 @@ namespace GenesysMigrationMCP.Functions
                     "resources/list" => await _mcpService.ListResources(),
                     "resources/read" => await HandleResourceRead(request, sessionId),
                     "migrate_skills" => await HandleMigrateSkills(request, sessionId),
-                    "session/terminate" => HandleSessionTermination(sessionId, httpRequest),
+                    "session/terminate" => await HandleSessionTermination(sessionId, httpRequest),
+                    "session/info" => await HandleSessionInfo(sessionId),
+                    "session/list" => await HandleListSessions(),
                     _ => throw new InvalidOperationException($"Unknown method: {request.Method}")
                 };
 
@@ -194,7 +197,13 @@ namespace GenesysMigrationMCP.Functions
 
         private async Task<InitializeResult> HandleInitialize(MCPRequest request, string sessionId, HttpRequestData httpRequest)
         {
-            _sessions[sessionId] = DateTime.UtcNow;
+            // Se sessionId não existe ainda, cria uma nova sessão
+            if (!await _sessionService.ValidateSessionAsync(sessionId))
+            {
+                sessionId = await _sessionService.CreateSessionAsync();
+            }
+            
+            await _sessionService.UpdateSessionActivityAsync(sessionId);
 
             var result = await _mcpService.Initialize();
             result.SessionId = sessionId; // devolve o sessionId ao cliente
@@ -209,8 +218,8 @@ namespace GenesysMigrationMCP.Functions
             if (toolParams == null)
                 throw new ArgumentException("Invalid tool parameters");
 
-            _logger.LogInformation("Calling tool: {Tool} with arguments: {Args}",
-                toolParams.Name, JsonConvert.SerializeObject(toolParams.Arguments));
+            _logger.LogInformation("Calling tool: {Tool} with arguments: {Args} for session: {SessionId}",
+                toolParams.Name, JsonConvert.SerializeObject(toolParams.Arguments), sessionId);
 
             var result = await _mcpService.CallTool(toolParams.Name, toolParams.Arguments ?? new Dictionary<string, object>());
 
@@ -223,13 +232,45 @@ namespace GenesysMigrationMCP.Functions
             return await _mcpService.ReadResource(request.Params?.ToString() ?? "");
         }
 
-        private object HandleSessionTermination(string sessionId, HttpRequestData httpRequest)
+        private async Task<object> HandleSessionTermination(string sessionId, HttpRequestData httpRequest)
         {
-            if (!string.IsNullOrEmpty(sessionId) && _sessions.ContainsKey(sessionId))
+            await _sessionService.RemoveSessionAsync(sessionId);
+            _logger.LogInformation("Session terminated: {SessionId}", sessionId);
+            return new { terminated = true, sessionId = sessionId };
+        }
+
+        private async Task<object> HandleSessionInfo(string sessionId)
+        {
+            var sessionInfo = await _sessionService.GetSessionInfoAsync(sessionId);
+            if (sessionInfo == null)
             {
-                _sessions.Remove(sessionId);
+                return new { error = "Session not found", sessionId = sessionId };
             }
-            return new { terminated = true };
+
+            return new 
+            { 
+                sessionId = sessionInfo.SessionId,
+                createdAt = sessionInfo.CreatedAt,
+                lastActivity = sessionInfo.LastActivity,
+                isActive = sessionInfo.IsActive,
+                durationMinutes = (DateTime.UtcNow - sessionInfo.CreatedAt).TotalMinutes
+            };
+        }
+
+        private async Task<object> HandleListSessions()
+        {
+            var sessions = await _sessionService.GetActiveSessionsAsync();
+            return new 
+            { 
+                activeSessions = sessions.Count(),
+                sessions = sessions.Select(s => new 
+                {
+                    sessionId = s.SessionId,
+                    createdAt = s.CreatedAt,
+                    lastActivity = s.LastActivity,
+                    durationMinutes = (DateTime.UtcNow - s.CreatedAt).TotalMinutes
+                })
+            };
         }
 
         private string? GetSessionId(HttpRequestData request)

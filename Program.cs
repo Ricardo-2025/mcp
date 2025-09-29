@@ -64,7 +64,7 @@ var host = new HostBuilder()
         // HttpClient.
         services.AddHttpClient();
 
-        // Logging.ddddd
+        // Logging.
         services.AddLogging(builder =>
         {
             builder.AddConsole();
@@ -77,6 +77,25 @@ var host = new HostBuilder()
 
         // Serviços de logging/monitoramento.
         services.AddScoped<ILoggingService, LoggingService>();
+
+        // Configuração de sessões
+        services.Configure<SessionConfiguration>(options =>
+        {
+            // Valores padrão
+            options.SessionTimeoutMinutes = 30;
+            options.CleanupIntervalMinutes = 10;
+            options.MaxConcurrentSessions = 1000;
+
+            // Sobrescreve com valores do configuration se existirem
+            var sessionSection = configuration.GetSection("Session");
+            if (sessionSection.Exists())
+            {
+                sessionSection.Bind(options);
+            }
+        });
+
+        // Serviço de sessões - Singleton para manter estado entre requisições
+        services.AddSingleton<ISessionService, SessionService>();
 
         // Registrar clientes com factory (remova o AddScoped<> duplicado sem factory).
         services.AddScoped<GenesysCloudClient>(provider =>
