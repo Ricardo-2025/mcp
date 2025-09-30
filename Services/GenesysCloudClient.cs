@@ -4,22 +4,23 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using JsonNet = Newtonsoft.Json;
+
 
 namespace GenesysMigrationMCP.Services
 {
     public class GenesysTokenResponse
     {
-        [JsonNet.JsonProperty("access_token")]
+        [Newtonsoft.Json.JsonProperty("access_token")]
         public string? AccessToken { get; set; }
 
-        [JsonNet.JsonProperty("token_type")]
+        [Newtonsoft.Json.JsonProperty("token_type")]
         public string? TokenType { get; set; }
 
-        [JsonNet.JsonProperty("expires_in")]
+        [Newtonsoft.Json.JsonProperty("expires_in")]
         public int ExpiresIn { get; set; }
     }
 
@@ -59,9 +60,9 @@ namespace GenesysMigrationMCP.Services
                 _environment = _configuration["GenesysCloud__ApiUrl"] 
                               ?? _configuration["GenesysCloud:ApiUrl"]
                               ?? "https://api.usw2.pure.cloud";
-                
+
                 _baseUrl = _environment; // Set _baseUrl to the same value as _environment
-                
+
                 _authUrl = _configuration["GenesysCloud__AuthUrl"] 
                           ?? _configuration["GenesysCloud:AuthUrl"]
                           ?? "https://login.usw2.pure.cloud/oauth/token";
@@ -80,7 +81,7 @@ namespace GenesysMigrationMCP.Services
                 _clientId = "";
                 _clientSecret = "";
                 _environment = "https://api.usw2.pure.cloud";
-                _baseUrl = _environment; // Set _baseUrl to the same value as _environment
+
                 _authUrl = "https://login.usw2.pure.cloud/oauth/token";
                 _tokenExpirationBuffer = 300;
             }
@@ -107,7 +108,7 @@ namespace GenesysMigrationMCP.Services
                 response.EnsureSuccessStatusCode();
 
                 var responseContent = await response.Content.ReadAsStringAsync();
-                var tokenResponse = JsonNet.JsonConvert.DeserializeObject<GenesysTokenResponse>(responseContent);
+                var tokenResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<GenesysTokenResponse>(responseContent);
 
                 if (tokenResponse?.AccessToken == null)
                 {
@@ -154,45 +155,6 @@ namespace GenesysMigrationMCP.Services
             return await response.Content.ReadAsStringAsync();
         }
 
-        /// <summary>
-        /// Faz uma chamada de API onde 404 é considerado um comportamento esperado (não um erro)
-        /// </summary>
-        public async Task<(bool Success, string Content)> MakeApiCallWithOptionalResultAsync(string endpoint, HttpMethod method = null, object? data = null)
-        {
-            method ??= HttpMethod.Get;
-            var token = await GetAccessTokenAsync();
-            var url = $"{_environment.TrimEnd('/')}/{endpoint.TrimStart('/')}";
-
-            var request = new HttpRequestMessage(method, url);
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-            if (data != null && method != HttpMethod.Get)
-            {
-                request.Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
-            }
-
-            var response = await _httpClient.SendAsync(request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var content = await response.Content.ReadAsStringAsync();
-                return (true, content);
-            }
-            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                // 404 é esperado - não é um erro
-                _logger.LogDebug("Recurso não encontrado (404) para endpoint {Endpoint} - comportamento esperado", endpoint);
-                return (false, string.Empty);
-            }
-            else
-            {
-                // Outros erros são reais
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError("Erro na API do Genesys Cloud. Status: {StatusCode}, Conteúdo: {Content}", response.StatusCode, errorContent);
-                throw new Exception($"Erro na API do Genesys Cloud: {response.StatusCode} - {errorContent}");
-            }
-        }
-
         public async Task<object> GetFlowsAsync(string? organizationId = null, string? filterType = "all")
         {
             try
@@ -206,32 +168,13 @@ namespace GenesysMigrationMCP.Services
                 {
                     foreach (var flow in entitiesElement.EnumerateArray())
                     {
-                        // Extrair todas as propriedades dinamicamente
-                        var flowProperties = new Dictionary<string, object>();
-                        
-                        // Processar cada propriedade retornada pela API
-                        foreach (var property in flow.EnumerateObject())
+                        flows.Add(new
                         {
-                            string propertyName = property.Name;
-                            JsonElement propertyValue = property.Value;
-                            
-                            // Converter o valor para o tipo apropriado com base no tipo de dado JSON
-                            object convertedValue = propertyValue.ValueKind switch
-                            {
-                                JsonValueKind.String => propertyValue.GetString() ?? "",
-                                JsonValueKind.Number => propertyValue.TryGetInt32(out int intValue) ? intValue : propertyValue.GetDouble(),
-                                JsonValueKind.True => true,
-                                JsonValueKind.False => false,
-                                JsonValueKind.Null => null,
-                                JsonValueKind.Object => ExtractJsonObject(propertyValue),
-                                JsonValueKind.Array => ExtractJsonArray(propertyValue),
-                                _ => propertyValue.ToString()
-                            };
-                            
-                            flowProperties.Add(propertyName, convertedValue);
-                        }
-                        
-                        flows.Add(flowProperties);
+                            id = flow.TryGetProperty("id", out var id) ? id.GetString() : null,
+                            name = flow.TryGetProperty("name", out var name) ? name.GetString() : null,
+                            type = flow.TryGetProperty("type", out var type) ? type.GetString() : "inbound",
+                            status = "active"
+                        });
                     }
                 }
 
@@ -250,423 +193,7 @@ namespace GenesysMigrationMCP.Services
                 throw;
             }
         }
-        
-        public async Task<object> GetUsersAsync(string? organizationId = null, string? state = "all")
-        {
-            try
-            {
-                _logger.LogInformation("Obtendo usuários do Genesys Cloud...");
-                var response = await MakeApiCallAsync("api/v2/users?pageSize=100");
-                var usersData = JsonDocument.Parse(response);
-                
-                var users = new List<object>();
-                if (usersData.RootElement.TryGetProperty("entities", out var entitiesElement))
-                {
-                    foreach (var user in entitiesElement.EnumerateArray())
-                    {
-                        // Extrair todas as propriedades dinamicamente
-                        var userProperties = new Dictionary<string, object>();
-                        
-                        // Processar cada propriedade retornada pela API
-                        foreach (var property in user.EnumerateObject())
-                        {
-                            string propertyName = property.Name;
-                            JsonElement propertyValue = property.Value;
-                            
-                            // Converter o valor para o tipo apropriado com base no tipo de dado JSON
-                            object convertedValue = propertyValue.ValueKind switch
-                            {
-                                JsonValueKind.String => propertyValue.GetString() ?? "",
-                                JsonValueKind.Number => propertyValue.TryGetInt32(out int intValue) ? intValue : propertyValue.GetDouble(),
-                                JsonValueKind.True => true,
-                                JsonValueKind.False => false,
-                                JsonValueKind.Null => null,
-                                JsonValueKind.Object => ExtractJsonObject(propertyValue),
-                                JsonValueKind.Array => ExtractJsonArray(propertyValue),
-                                _ => propertyValue.ToString()
-                            };
-                            
-                            userProperties.Add(propertyName, convertedValue);
-                        }
-                        
-                        users.Add(userProperties);
-                    }
-                }
 
-                return new Dictionary<string, object>
-                {
-                    ["organizationId"] = organizationId,
-                    ["state"] = state,
-                    ["users"] = users,
-                    ["totalCount"] = users.Count,
-                    ["timestamp"] = DateTime.UtcNow
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao obter usuários do Genesys Cloud");
-                throw;
-            }
-        }
-        
-        // Método auxiliar para extrair objetos JSON aninhados
-        private Dictionary<string, object> ExtractJsonObject(JsonElement element)
-        {
-            var result = new Dictionary<string, object>();
-            foreach (var property in element.EnumerateObject())
-            {
-                result[property.Name] = property.Value.ValueKind switch
-                {
-                    JsonValueKind.String => property.Value.GetString() ?? "",
-                    JsonValueKind.Number => property.Value.TryGetInt32(out int intValue) ? intValue : property.Value.GetDouble(),
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Null => null,
-                    JsonValueKind.Object => ExtractJsonObject(property.Value),
-                    JsonValueKind.Array => ExtractJsonArray(property.Value),
-                    _ => property.Value.ToString()
-                };
-            }
-            return result;
-        }
-        
-        // Método auxiliar para extrair arrays JSON
-        private List<object> ExtractJsonArray(JsonElement element)
-        {
-            var result = new List<object>();
-            foreach (var item in element.EnumerateArray())
-            {
-                result.Add(item.ValueKind switch
-                {
-                    JsonValueKind.String => item.GetString() ?? "",
-                    JsonValueKind.Number => item.TryGetInt32(out int intValue) ? intValue : item.GetDouble(),
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Null => null,
-                    JsonValueKind.Object => ExtractJsonObject(item),
-                    JsonValueKind.Array => ExtractJsonArray(item),
-                    _ => item.ToString()
-                });
-            }
-            return result;
-        }
-        
-        public async Task<object> GetQueuesAsync(string? organizationId = null)
-        {
-            try
-            {
-                _logger.LogInformation("Obtendo filas do Genesys Cloud...");
-                var response = await MakeApiCallAsync("api/v2/routing/queues?pageSize=100");
-                var queuesData = JsonDocument.Parse(response);
-                
-                var queues = new List<object>();
-                if (queuesData.RootElement.TryGetProperty("entities", out var entitiesElement))
-                {
-                    foreach (var queue in entitiesElement.EnumerateArray())
-                    {
-                        // Extrair todas as propriedades dinamicamente
-                        var queueProperties = new Dictionary<string, object>();
-                        
-                        // Processar cada propriedade retornada pela API
-                        foreach (var property in queue.EnumerateObject())
-                        {
-                            string propertyName = property.Name;
-                            JsonElement propertyValue = property.Value;
-                            
-                            // Converter o valor para o tipo apropriado com base no tipo de dado JSON
-                            object convertedValue = propertyValue.ValueKind switch
-                            {
-                                JsonValueKind.String => propertyValue.GetString() ?? "",
-                                JsonValueKind.Number => propertyValue.TryGetInt32(out int intValue) ? intValue : propertyValue.GetDouble(),
-                                JsonValueKind.True => true,
-                                JsonValueKind.False => false,
-                                JsonValueKind.Null => null,
-                                JsonValueKind.Object => ExtractJsonObject(propertyValue),
-                                JsonValueKind.Array => ExtractJsonArray(propertyValue),
-                                _ => propertyValue.ToString()
-                            };
-                            
-                            queueProperties.Add(propertyName, convertedValue);
-                        }
-                        
-                        queues.Add(queueProperties);
-                    }
-                }
-
-                return new Dictionary<string, object>
-                {
-                    ["organizationId"] = organizationId,
-                    ["queues"] = queues,
-                    ["totalCount"] = queues.Count,
-                    ["timestamp"] = DateTime.UtcNow
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao obter filas do Genesys Cloud");
-                throw;
-            }
-        }
-        
-        public async Task<object> GetQueueRoutingRulesAsync(string queueId)
-        {
-            try
-            {
-                _logger.LogInformation($"Obtendo regras de roteamento para a fila {queueId}...");
-                var (success, response) = await MakeApiCallWithOptionalResultAsync($"api/v2/routing/queues/{queueId}/routing-rules");
-                
-                if (!success)
-                {
-                    // 404 é esperado para filas sem regras de roteamento configuradas
-                    _logger.LogDebug($"Nenhuma regra de roteamento encontrada para a fila {queueId} (404 - esperado)");
-                    return new List<object>();
-                }
-                
-                var rulesData = JsonDocument.Parse(response);
-                var rules = new List<object>();
-                
-                if (rulesData.RootElement.TryGetProperty("entities", out var entitiesElement))
-                {
-                    foreach (var rule in entitiesElement.EnumerateArray())
-                    {
-                        // Extrair todas as propriedades dinamicamente
-                        var ruleProperties = new Dictionary<string, object>();
-                        
-                        // Processar cada propriedade retornada pela API
-                        foreach (var property in rule.EnumerateObject())
-                        {
-                            string propertyName = property.Name;
-                            JsonElement propertyValue = property.Value;
-                            
-                            // Converter o valor para o tipo apropriado com base no tipo de dado JSON
-                            object convertedValue = propertyValue.ValueKind switch
-                            {
-                                JsonValueKind.String => propertyValue.GetString() ?? "",
-                                JsonValueKind.Number => propertyValue.TryGetInt32(out int intValue) ? intValue : propertyValue.GetDouble(),
-                                JsonValueKind.True => true,
-                                JsonValueKind.False => false,
-                                JsonValueKind.Null => null,
-                                JsonValueKind.Object => ExtractJsonObject(propertyValue),
-                                JsonValueKind.Array => ExtractJsonArray(propertyValue),
-                                _ => propertyValue.ToString()
-                            };
-                            
-                            ruleProperties.Add(propertyName, convertedValue);
-                        }
-                        
-                        rules.Add(ruleProperties);
-                    }
-                }
-
-                return rules;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Erro ao obter regras de roteamento para a fila {queueId}");
-                throw new Exception($"Erro ao obter regras de roteamento para a fila {queueId}", ex);
-            }
-        }
-
-        public async Task<object> GetQueueMembersAsync(string queueId)
-        {
-            try
-            {
-                _logger.LogInformation($"Obtendo membros da fila {queueId}...");
-                var response = await MakeApiCallAsync($"api/v2/routing/queues/{queueId}/members");
-                var membersData = JsonDocument.Parse(response);
-                
-                var members = new List<object>();
-                if (membersData.RootElement.TryGetProperty("entities", out var entitiesElement))
-                {
-                    foreach (var member in entitiesElement.EnumerateArray())
-                    {
-                        // Extrair todas as propriedades dinamicamente
-                        var memberProperties = new Dictionary<string, object>();
-                        
-                        // Processar cada propriedade retornada pela API
-                        foreach (var property in member.EnumerateObject())
-                        {
-                            string propertyName = property.Name;
-                            JsonElement propertyValue = property.Value;
-                            
-                            // Converter o valor para o tipo apropriado com base no tipo de dado JSON
-                            object convertedValue = propertyValue.ValueKind switch
-                            {
-                                JsonValueKind.String => propertyValue.GetString() ?? "",
-                                JsonValueKind.Number => propertyValue.TryGetInt32(out int intValue) ? intValue : propertyValue.GetDouble(),
-                                JsonValueKind.True => true,
-                                JsonValueKind.False => false,
-                                JsonValueKind.Null => null,
-                                JsonValueKind.Object => ExtractJsonObject(propertyValue),
-                                JsonValueKind.Array => ExtractJsonArray(propertyValue),
-                                _ => propertyValue.ToString()
-                            };
-                            
-                            memberProperties.Add(propertyName, convertedValue);
-                        }
-                        
-                        members.Add(memberProperties);
-                    }
-                }
-
-                return members;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Erro ao obter membros da fila {queueId}");
-                return new List<object>();
-            }
-        }
-        
-        public async Task<object> GetSkillsAsync(int pageSize = 25, int pageNumber = 1, string? name = null)
-        {
-            try
-            {
-                pageSize = Math.Max(1, Math.Min(100, pageSize));
-                pageNumber = Math.Max(1, pageNumber);
-
-                var endpoint = $"api/v2/routing/skills?pageSize={pageSize}&pageNumber={pageNumber}";
-                if (!string.IsNullOrWhiteSpace(name))
-                {
-                    endpoint += $"&name={Uri.EscapeDataString(name)}";
-                }
-
-                _logger.LogInformation("Obtendo skills do Genesys Cloud... endpoint: {Endpoint}", endpoint);
-                var response = await MakeApiCallAsync(endpoint);
-                var skillsData = JsonDocument.Parse(response);
-
-                var skills = new List<object>();
-                if (skillsData.RootElement.TryGetProperty("entities", out var entitiesElement))
-                {
-                    foreach (var skill in entitiesElement.EnumerateArray())
-                    {
-                        // Extrair todas as propriedades dinamicamente
-                        var skillProperties = new Dictionary<string, object>();
-                        
-                        // Processar cada propriedade retornada pela API
-                        foreach (var property in skill.EnumerateObject())
-                        {
-                            string propertyName = property.Name;
-                            JsonElement propertyValue = property.Value;
-                            
-                            // Converter o valor para o tipo apropriado com base no tipo de dado JSON
-                            object convertedValue = propertyValue.ValueKind switch
-                            {
-                                JsonValueKind.String => propertyValue.GetString() ?? "",
-                                JsonValueKind.Number => propertyValue.TryGetInt32(out int intValue) ? intValue : propertyValue.GetDouble(),
-                                JsonValueKind.True => true,
-                                JsonValueKind.False => false,
-                                JsonValueKind.Null => null,
-                                JsonValueKind.Object => ExtractJsonObject(propertyValue),
-                                JsonValueKind.Array => ExtractJsonArray(propertyValue),
-                                _ => propertyValue.ToString()
-                            };
-                            
-                            skillProperties.Add(propertyName, convertedValue);
-                        }
-                        
-                        skills.Add(skillProperties);
-                    }
-                }
-
-                return new Dictionary<string, object>
-                {
-                    ["skills"] = skills,
-                    ["totalCount"] = skills.Count,
-                    ["pageSize"] = pageSize,
-                    ["pageNumber"] = pageNumber,
-                    ["timestamp"] = DateTime.UtcNow
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao obter skills do Genesys Cloud");
-                throw;
-            }
-        }
-        
-        /// <summary>
-        /// Obtém a lista de bots do Genesys Cloud
-        /// </summary>
-        /// <param name="organizationId">ID opcional da organização</param>
-        /// <param name="botType">Tipo de bot (opcional)</param>
-        /// <returns>Objeto contendo a lista de bots</returns>
-        public async Task<object> GetBotsAsync(string? organizationId = null, string? botType = null)
-        {
-            try
-            {
-                _logger.LogInformation("Obtendo bots do Genesys Cloud...");
-                
-                // Construir o endpoint com os filtros necessários
-                string endpoint = "api/v2/flows?pageSize=100";
-                
-                // Adicionar filtro por tipo de bot se especificado
-                if (!string.IsNullOrEmpty(botType))
-                {
-                    endpoint += $"&type={Uri.EscapeDataString(botType)}";
-                }
-                else
-                {
-                    // Por padrão, buscar todos os tipos de bots
-                    endpoint += "&type=bot,digitalbot,inboundshortmessage";
-                }
-                
-                var response = await MakeApiCallAsync(endpoint);
-                var botsData = JsonDocument.Parse(response);
-                
-                var bots = new List<object>();
-                if (botsData.RootElement.TryGetProperty("entities", out var entitiesElement))
-                {
-                    foreach (var bot in entitiesElement.EnumerateArray())
-                    {
-                        // Extrair todas as propriedades dinamicamente
-                        var botProperties = new Dictionary<string, object>();
-                        
-                        // Processar cada propriedade retornada pela API
-                        foreach (var property in bot.EnumerateObject())
-                        {
-                            string propertyName = property.Name;
-                            JsonElement propertyValue = property.Value;
-                            
-                            // Converter o valor para o tipo apropriado com base no tipo de dado JSON
-                            object convertedValue = propertyValue.ValueKind switch
-                            {
-                                JsonValueKind.String => propertyValue.GetString() ?? "",
-                                JsonValueKind.Number => propertyValue.TryGetInt32(out int intValue) ? intValue : propertyValue.GetDouble(),
-                                JsonValueKind.True => true,
-                                JsonValueKind.False => false,
-                                JsonValueKind.Null => null,
-                                JsonValueKind.Object => ExtractJsonObject(propertyValue),
-                                JsonValueKind.Array => ExtractJsonArray(propertyValue),
-                                _ => propertyValue.ToString()
-                            };
-                            
-                            botProperties.Add(propertyName, convertedValue);
-                        }
-                        
-                        // Adicionar propriedade para identificar como bot
-                        botProperties["isBot"] = true;
-                        
-                        bots.Add(botProperties);
-                    }
-                }
-
-                return new Dictionary<string, object>
-                {
-                    ["organizationId"] = organizationId,
-                    ["botType"] = botType ?? "all",
-                    ["bots"] = bots,
-                    ["totalCount"] = bots.Count,
-                    ["timestamp"] = DateTime.UtcNow
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao obter bots do Genesys Cloud");
-                throw;
-            }
-        }
-        
         /// <summary>
         /// Método principal para obter todos os dados de flows do Genesys - COPIADO DO PROJETO DE EXEMPLO
         /// </summary>
@@ -701,8 +228,7 @@ namespace GenesysMigrationMCP.Services
                     
                     // Bot flows - usando endpoint correto com filtros por tipo
                     Task.Run(async () => {
-                        try
-                        {
+                        try {
                             _logger.LogInformation("*** GENESYS CLIENT MCP: Chamando API: api/v2/flows?pageSize=100&type=digitalbot ***");
                             var result = await MakeApiCallAsync("api/v2/flows?pageSize=100&type=digitalbot");
                             _logger.LogInformation("Resposta da API digitalbot: {ResponseLength} caracteres", result?.Length ?? 0);
@@ -712,7 +238,7 @@ namespace GenesysMigrationMCP.Services
                                 var entities = GetEntitiesArray(parsed);
                                 _logger.LogInformation("Digital bot flows encontrados: {Count}", entities?.Length ?? 0);
                             }
-                            return ("digitalBotFlows", result ?? "");
+                            return ("digitalBotFlows", result);
                         } catch (Exception ex) {
                             _logger.LogWarning("Erro ao chamar api/v2/flows com type=digitalbot: {Error}", ex.Message);
                             return ("digitalBotFlows", "");
@@ -729,7 +255,7 @@ namespace GenesysMigrationMCP.Services
                                 var entities = GetEntitiesArray(parsed);
                                 _logger.LogInformation("Bot flows encontrados: {Count}", entities?.Length ?? 0);
                             }
-                            return ("dialogEngineBotFlows", result ?? "");
+                            return ("dialogEngineBotFlows", result);
                         } catch (Exception ex) {
                             _logger.LogWarning("Erro ao chamar api/v2/flows com type=bot: {Error}", ex.Message);
                             return ("dialogEngineBotFlows", "");
@@ -813,7 +339,197 @@ namespace GenesysMigrationMCP.Services
 
             return null;
         }
-        
+
+        public async Task<object> GetUsersAsync(string? organizationId = null, string? state = "all")
+        {
+            try
+            {
+                _logger.LogInformation("Obtendo usuários do Genesys Cloud...");
+                var response = await MakeApiCallAsync("api/v2/users?pageSize=100");
+                var usersData = JsonDocument.Parse(response);
+                
+                var users = new List<object>();
+                if (usersData.RootElement.TryGetProperty("entities", out var entitiesElement))
+                {
+                    foreach (var user in entitiesElement.EnumerateArray())
+                    {
+                        users.Add(new Dictionary<string, object?>
+                        {
+                            ["id"] = user.TryGetProperty("id", out var id) ? id.GetString() : null,
+                            ["name"] = user.TryGetProperty("name", out var name) ? name.GetString() : null,
+                            ["email"] = user.TryGetProperty("email", out var email) ? email.GetString() : null,
+                            ["username"] = user.TryGetProperty("username", out var username) ? username.GetString() : null,
+                            ["state"] = user.TryGetProperty("state", out var stateEl) ? stateEl.GetString() : "active"
+                        });
+                    }
+                }
+
+                return new Dictionary<string, object>
+                {
+                    ["organizationId"] = organizationId,
+                    ["state"] = state,
+                    ["users"] = users,
+                    ["totalCount"] = users.Count,
+                    ["timestamp"] = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter usuários do Genesys Cloud");
+                throw;
+            }
+        }
+
+        public async Task<object> GetQueuesAsync(string? organizationId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Obtendo filas do Genesys Cloud...");
+                var response = await MakeApiCallAsync("api/v2/routing/queues?pageSize=100");
+                var queuesData = JsonDocument.Parse(response);
+                
+                var queues = new List<object>();
+                if (queuesData.RootElement.TryGetProperty("entities", out var entitiesElement))
+                {
+                    foreach (var queue in entitiesElement.EnumerateArray())
+                    {
+                        queues.Add(new
+                        {
+                            id = queue.TryGetProperty("id", out var id) ? id.GetString() : null,
+                            name = queue.TryGetProperty("name", out var name) ? name.GetString() : null,
+                            description = queue.TryGetProperty("description", out var desc) ? desc.GetString() : null
+                        });
+                    }
+                }
+
+                return new Dictionary<string, object>
+                {
+                    ["organizationId"] = organizationId,
+                    ["queues"] = queues,
+                    ["totalCount"] = queues.Count,
+                    ["timestamp"] = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter filas do Genesys Cloud");
+                throw;
+            }
+        }
+
+        public async Task<object> GetQueueRoutingRulesAsync(string queueId)
+        {
+            try
+            {
+                _logger.LogInformation($"Obtendo regras de roteamento para a fila {queueId}...");
+                var response = await MakeApiCallAsync($"api/v2/routing/queues/{queueId}/routing-rules");
+                var rulesData = JsonDocument.Parse(response);
+                
+                var rules = new List<object>();
+                if (rulesData.RootElement.TryGetProperty("entities", out var entitiesElement))
+                {
+                    foreach (var rule in entitiesElement.EnumerateArray())
+                    {
+                        rules.Add(new
+                        {
+                            id = rule.TryGetProperty("id", out var id) ? id.GetString() : null,
+                            name = rule.TryGetProperty("name", out var name) ? name.GetString() : null,
+                            priority = rule.TryGetProperty("priority", out var priority) ? priority.GetInt32() : 0,
+                            enabled = rule.TryGetProperty("enabled", out var enabled) ? enabled.GetBoolean() : false
+                        });
+                    }
+                }
+
+                return rules;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao obter regras de roteamento para a fila {queueId}");
+                return new List<object>();
+            }
+        }
+
+        public async Task<object> GetQueueMembersAsync(string queueId)
+        {
+            try
+            {
+                _logger.LogInformation($"Obtendo membros da fila {queueId}...");
+                var response = await MakeApiCallAsync($"api/v2/routing/queues/{queueId}/members");
+                var membersData = JsonDocument.Parse(response);
+                
+                var members = new List<object>();
+                if (membersData.RootElement.TryGetProperty("entities", out var entitiesElement))
+                {
+                    foreach (var member in entitiesElement.EnumerateArray())
+                    {
+                        members.Add(new
+                        {
+                            userId = member.TryGetProperty("id", out var id) ? id.GetString() : null,
+                            name = member.TryGetProperty("name", out var name) ? name.GetString() : null,
+                            email = member.TryGetProperty("email", out var email) ? email.GetString() : null,
+                            skills = new List<object>()
+                        });
+                    }
+                }
+
+                return members;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao obter membros da fila {queueId}");
+                return new List<object>();
+            }
+        }
+
+        public async Task<object> GetSkillsAsync(int pageSize = 25, int pageNumber = 1, string? name = null)
+        {
+            try
+            {
+                pageSize = Math.Max(1, Math.Min(100, pageSize));
+                pageNumber = Math.Max(1, pageNumber);
+
+                var endpoint = $"api/v2/routing/skills?pageSize={pageSize}&pageNumber={pageNumber}";
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    endpoint += $"&name={Uri.EscapeDataString(name)}";
+                }
+
+                _logger.LogInformation("Obtendo skills do Genesys Cloud... endpoint: {Endpoint}", endpoint);
+                var response = await MakeApiCallAsync(endpoint);
+                var skillsData = JsonDocument.Parse(response);
+
+                var skills = new List<object>();
+                if (skillsData.RootElement.TryGetProperty("entities", out var entitiesElement))
+                {
+                    foreach (var skill in entitiesElement.EnumerateArray())
+                    {
+                        skills.Add(new Dictionary<string, object?>
+                        {
+                            ["id"] = skill.TryGetProperty("id", out var id) ? id.GetString() : null,
+                            ["name"] = skill.TryGetProperty("name", out var n) ? n.GetString() : null,
+                            ["dateCreated"] = skill.TryGetProperty("dateCreated", out var dc) ? dc.GetDateTime().ToString("o") : null,
+                            ["dateModified"] = skill.TryGetProperty("dateModified", out var dm) ? dm.GetDateTime().ToString("o") : null,
+                            ["state"] = skill.TryGetProperty("state", out var st) ? st.GetString() : null
+                        });
+                    }
+                }
+
+                return new Dictionary<string, object>
+                {
+                    ["skills"] = skills,
+                    ["totalCount"] = skills.Count,
+                    ["pageSize"] = pageSize,
+                    ["pageNumber"] = pageNumber,
+                    ["timestamp"] = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter skills do Genesys Cloud");
+                throw;
+            }
+        }
+
         public async Task<bool> TestConnectionAsync()
         {
             try
@@ -840,18 +556,18 @@ namespace GenesysMigrationMCP.Services
             try
             {
                 _logger.LogInformation($"Obtendo steps do bot {botId} do Genesys Cloud...");
-                
+
                 // Primeiro, obter os dados básicos do bot/flow
                 var response = await MakeApiCallAsync($"api/v2/flows/{Uri.EscapeDataString(botId)}");
                 var botData = JsonDocument.Parse(response);
-                
+
                 var result = new Dictionary<string, object>
                 {
                     ["botId"] = botId,
                     ["basicInfo"] = ExtractJsonObject(botData.RootElement),
                     ["timestamp"] = DateTime.UtcNow
                 };
-                
+
                 if (includeDefinition)
                 {
                     try
@@ -859,14 +575,14 @@ namespace GenesysMigrationMCP.Services
                         // Obter a configuração completa do flow/bot
                         var configResponse = await MakeApiCallAsync($"api/v2/flows/{Uri.EscapeDataString(botId)}/configuration");
                         var configData = JsonDocument.Parse(configResponse);
-                        
+
                         result["configuration"] = ExtractJsonObject(configData.RootElement);
-                        
+
                         // Extrair steps da definição
                         var steps = ExtractBotStepsFromDefinition(configData.RootElement);
                         result["steps"] = steps;
                         result["stepsCount"] = steps.Count;
-                        
+
                         // Tentar obter versões do flow
                         try
                         {
@@ -888,7 +604,7 @@ namespace GenesysMigrationMCP.Services
                         result["stepsCount"] = 0;
                     }
                 }
-                
+
                 return result;
             }
             catch (Exception ex)
@@ -898,6 +614,49 @@ namespace GenesysMigrationMCP.Services
             }
         }
 
+        // Método auxiliar para extrair objetos JSON aninhados
+        private Dictionary<string, object> ExtractJsonObject(JsonElement element)
+        {
+            var result = new Dictionary<string, object>();
+            foreach (var property in element.EnumerateObject())
+            {
+                result[property.Name] = property.Value.ValueKind switch
+                {
+                    JsonValueKind.String => property.Value.GetString() ?? "",
+                    JsonValueKind.Number => property.Value.TryGetInt32(out int intValue) ? intValue : property.Value.GetDouble(),
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Null => null,
+                    JsonValueKind.Object => ExtractJsonObject(property.Value),
+                    JsonValueKind.Array => ExtractJsonArray(property.Value),
+                    _ => property.Value.ToString()
+                };
+            }
+            return result;
+        }
+
+        // Método auxiliar para extrair arrays JSON
+        private List<object> ExtractJsonArray(JsonElement element)
+        {
+            var result = new List<object>();
+            foreach (var item in element.EnumerateArray())
+            {
+                result.Add(item.ValueKind switch
+                {
+                    JsonValueKind.String => item.GetString() ?? "",
+                    JsonValueKind.Number => item.TryGetInt32(out int intValue) ? intValue : item.GetDouble(),
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Null => null,
+                    JsonValueKind.Object => ExtractJsonObject(item),
+                    JsonValueKind.Array => ExtractJsonArray(item),
+                    _ => item.ToString()
+                });
+            }
+            return result;
+        }
+
+
         /// <summary>
         /// Extrai steps/ações da definição de um bot de forma recursiva
         /// </summary>
@@ -906,12 +665,12 @@ namespace GenesysMigrationMCP.Services
         private List<object> ExtractBotStepsFromDefinition(JsonElement element)
         {
             var steps = new List<object>();
-            
+
             try
             {
                 // Procurar por diferentes tipos de steps/ações em bots
                 var stepTypes = new[] { "steps", "actions", "tasks", "states", "nodes", "activities", "intents", "entities" };
-                
+
                 foreach (var stepType in stepTypes)
                 {
                     if (element.TryGetProperty(stepType, out var stepsElement))
@@ -933,13 +692,13 @@ namespace GenesysMigrationMCP.Services
                         }
                     }
                 }
-                
+
                 // Busca recursiva em objetos aninhados
                 if (element.ValueKind == JsonValueKind.Object)
                 {
                     foreach (var property in element.EnumerateObject())
                     {
-                        if (property.Value.ValueKind == JsonValueKind.Object || 
+                        if (property.Value.ValueKind == JsonValueKind.Object ||
                             property.Value.ValueKind == JsonValueKind.Array)
                         {
                             var nestedSteps = ExtractBotStepsFromDefinition(property.Value);
@@ -963,10 +722,10 @@ namespace GenesysMigrationMCP.Services
             {
                 _logger.LogWarning(ex, "Erro ao extrair steps da definição do bot");
             }
-            
+
             return steps;
         }
-        
+
         /// <summary>
         /// Obtém todas as regras de roteamento do Genesys Cloud com extração dinâmica de propriedades
         /// </summary>
@@ -977,7 +736,7 @@ namespace GenesysMigrationMCP.Services
             try
             {
                 _logger.LogInformation("Obtendo regras de roteamento do Genesys Cloud...");
-                
+
                 var routingRules = new List<object>();
                 var routingRuleDetails = new List<object>();
                 var errors = new List<string>();
@@ -989,19 +748,19 @@ namespace GenesysMigrationMCP.Services
                     if (success)
                     {
                         var rulesData = JsonDocument.Parse(response);
-                        
+
                         if (rulesData.RootElement.TryGetProperty("entities", out var entitiesElement))
                         {
                             foreach (var rule in entitiesElement.EnumerateArray())
                             {
                                 var ruleProperties = new Dictionary<string, object>();
-                                
+
                                 // Extrair todas as propriedades dinamicamente
                                 foreach (var property in rule.EnumerateObject())
                                 {
                                     string propertyName = property.Name;
                                     JsonElement propertyValue = property.Value;
-                                    
+
                                     object convertedValue = propertyValue.ValueKind switch
                                     {
                                         JsonValueKind.String => propertyValue.GetString() ?? "",
@@ -1013,10 +772,10 @@ namespace GenesysMigrationMCP.Services
                                         JsonValueKind.Array => ExtractJsonArray(propertyValue),
                                         _ => propertyValue.ToString()
                                     };
-                                    
+
                                     ruleProperties.Add(propertyName, convertedValue);
                                 }
-                                
+
                                 routingRules.Add(ruleProperties);
                             }
                         }
@@ -1046,13 +805,13 @@ namespace GenesysMigrationMCP.Services
                                 {
                                     var detailResponse = await MakeApiCallAsync($"api/v2/routing/rules/{ruleId}");
                                     var detailData = JsonDocument.Parse(detailResponse);
-                                    
+
                                     var detailProperties = new Dictionary<string, object>();
                                     foreach (var property in detailData.RootElement.EnumerateObject())
                                     {
                                         string propertyName = property.Name;
                                         JsonElement propertyValue = property.Value;
-                                        
+
                                         object convertedValue = propertyValue.ValueKind switch
                                         {
                                             JsonValueKind.String => propertyValue.GetString() ?? "",
@@ -1064,10 +823,10 @@ namespace GenesysMigrationMCP.Services
                                             JsonValueKind.Array => ExtractJsonArray(propertyValue),
                                             _ => propertyValue.ToString()
                                         };
-                                        
+
                                         detailProperties.Add(propertyName, convertedValue);
                                     }
-                                    
+
                                     routingRuleDetails.Add(detailProperties);
                                 }
                                 catch (Exception ex)
@@ -1086,7 +845,7 @@ namespace GenesysMigrationMCP.Services
                 {
                     var queuesResponse = await MakeApiCallAsync("api/v2/routing/queues?pageSize=25");
                     var queuesData = JsonDocument.Parse(queuesResponse);
-                    
+
                     if (queuesData.RootElement.TryGetProperty("entities", out var queueEntities))
                     {
                         foreach (var queue in queueEntities.EnumerateArray())
@@ -1145,7 +904,7 @@ namespace GenesysMigrationMCP.Services
                 };
 
                 _logger.LogInformation($"Extração de regras de roteamento concluída. Total: {routingRules.Count} regras gerais, {routingRuleDetails.Count} detalhes, {queueRoutingRules.Count} regras de filas");
-                
+
                 return result;
             }
             catch (Exception ex)
@@ -1168,6 +927,45 @@ namespace GenesysMigrationMCP.Services
             }
         }
 
+        /// <summary>
+        /// Faz uma chamada de API onde 404 é considerado um comportamento esperado (não um erro)
+        /// </summary>
+        public async Task<(bool Success, string Content)> MakeApiCallWithOptionalResultAsync(string endpoint, HttpMethod method = null, object? data = null)
+        {
+            method ??= HttpMethod.Get;
+            var token = await GetAccessTokenAsync();
+            var url = $"{_environment.TrimEnd('/')}/{endpoint.TrimStart('/')}";
+
+            var request = new HttpRequestMessage(method, url);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            if (data != null && method != HttpMethod.Get)
+            {
+                request.Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+            }
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                return (true, content);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // 404 é esperado - não é um erro
+                _logger.LogDebug("Recurso não encontrado (404) para endpoint {Endpoint} - comportamento esperado", endpoint);
+                return (false, string.Empty);
+            }
+            else
+            {
+                // Outros erros são reais
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Erro na API do Genesys Cloud. Status: {StatusCode}, Conteúdo: {Content}", response.StatusCode, errorContent);
+                throw new Exception($"Erro na API do Genesys Cloud: {response.StatusCode} - {errorContent}");
+            }
+        }
+
         public async Task<object> GetWorkspacesAsync(int pageSize = 25, int pageNumber = 1, string? name = null)
         {
             try
@@ -1183,7 +981,7 @@ namespace GenesysMigrationMCP.Services
 
                 _logger.LogInformation("Obtendo workspaces do Genesys Cloud... endpoint: {Endpoint}", endpoint);
                 var (success, response) = await MakeApiCallWithOptionalResultAsync(endpoint);
-                
+
                 if (!success)
                 {
                     _logger.LogDebug("Nenhum workspace encontrado ou API retornou 404");
@@ -1206,7 +1004,7 @@ namespace GenesysMigrationMCP.Services
                     foreach (var workspace in entitiesElement.EnumerateArray())
                     {
                         var workspaceProperties = new Dictionary<string, object>();
-                        
+
                         foreach (var property in workspace.EnumerateObject())
                         {
                             string propertyName = property.Name;
@@ -1238,7 +1036,7 @@ namespace GenesysMigrationMCP.Services
                                             var objDict = new Dictionary<string, object>();
                                             foreach (var objProp in item.EnumerateObject())
                                             {
-                                                objDict[objProp.Name] = objProp.Value.ValueKind == JsonValueKind.String 
+                                                objDict[objProp.Name] = objProp.Value.ValueKind == JsonValueKind.String
                                                     ? objProp.Value.GetString() ?? ""
                                                     : objProp.Value.ToString();
                                             }
@@ -1251,7 +1049,7 @@ namespace GenesysMigrationMCP.Services
                                     var nestedDict = new Dictionary<string, object>();
                                     foreach (var nestedProp in property.Value.EnumerateObject())
                                     {
-                                        nestedDict[nestedProp.Name] = nestedProp.Value.ValueKind == JsonValueKind.String 
+                                        nestedDict[nestedProp.Name] = nestedProp.Value.ValueKind == JsonValueKind.String
                                             ? nestedProp.Value.GetString() ?? ""
                                             : nestedProp.Value.ToString();
                                     }
@@ -1307,7 +1105,7 @@ namespace GenesysMigrationMCP.Services
                 };
             }
         }
-        
+
         public async Task<object> GetDivisionsAsync(int pageSize = 25, int pageNumber = 1, string? name = null)
         {
             try
@@ -1330,7 +1128,7 @@ namespace GenesysMigrationMCP.Services
                 }
 
                 var (success, response) = await MakeApiCallWithOptionalResultAsync(url);
-                
+
                 if (!success)
                 {
                     return new
@@ -1360,7 +1158,7 @@ namespace GenesysMigrationMCP.Services
                     foreach (var division in entitiesElement.EnumerateArray())
                     {
                         var divisionProperties = new Dictionary<string, object>();
-                        
+
                         foreach (var property in division.EnumerateObject())
                         {
                             string propertyName = property.Name;
@@ -1392,7 +1190,7 @@ namespace GenesysMigrationMCP.Services
                                             var objDict = new Dictionary<string, object>();
                                             foreach (var objProp in item.EnumerateObject())
                                             {
-                                                objDict[objProp.Name] = objProp.Value.ValueKind == JsonValueKind.String 
+                                                objDict[objProp.Name] = objProp.Value.ValueKind == JsonValueKind.String
                                                     ? objProp.Value.GetString() ?? ""
                                                     : objProp.Value.ToString();
                                             }
@@ -1405,7 +1203,7 @@ namespace GenesysMigrationMCP.Services
                                     var nestedDict = new Dictionary<string, object>();
                                     foreach (var nestedProp in property.Value.EnumerateObject())
                                     {
-                                        nestedDict[nestedProp.Name] = nestedProp.Value.ValueKind == JsonValueKind.String 
+                                        nestedDict[nestedProp.Name] = nestedProp.Value.ValueKind == JsonValueKind.String
                                             ? nestedProp.Value.GetString() ?? ""
                                             : nestedProp.Value.ToString();
                                     }
@@ -1421,7 +1219,7 @@ namespace GenesysMigrationMCP.Services
                                 divisionProperties[propertyName] = propertyValue;
                             }
                         }
-                        
+
                         divisions.Add(divisionProperties);
                     }
                 }
@@ -1558,7 +1356,7 @@ namespace GenesysMigrationMCP.Services
                 _logger.LogError(ex, "Error retrieving groups from Genesys Cloud");
                 throw;
             }
-         }
+        }
 
         public async Task<object> GetRolesAsync(string? name = null, int pageSize = 25, int pageNumber = 1)
         {
@@ -1665,7 +1463,7 @@ namespace GenesysMigrationMCP.Services
                 _logger.LogError(ex, "Error retrieving roles from Genesys Cloud");
                 throw;
             }
-         }
+        }
 
         public async Task<object> GetLocationsAsync(string? name = null, int pageSize = 25, int pageNumber = 1)
         {
@@ -1772,7 +1570,7 @@ namespace GenesysMigrationMCP.Services
                 _logger.LogError(ex, "Error retrieving locations from Genesys Cloud");
                 throw;
             }
-         }
+        }
 
         public async Task<object> GetAnalyticsAsync(string? interval = null, int pageSize = 25, int pageNumber = 1)
         {
@@ -2550,7 +2348,7 @@ namespace GenesysMigrationMCP.Services
                         {
                             var unitsDoc = JsonDocument.Parse(managementUnitsResult.Content);
                             var unitsRoot = unitsDoc.RootElement;
-                            
+
                             if (unitsRoot.TryGetProperty("entities", out var unitsElement) && unitsElement.GetArrayLength() > 0)
                             {
                                 var firstUnit = unitsElement[0];
@@ -3189,7 +2987,7 @@ namespace GenesysMigrationMCP.Services
                         {
                             var userDoc = JsonDocument.Parse(userResult.Content);
                             var userRoot = userDoc.RootElement;
-                            
+
                             if (userRoot.TryGetProperty("id", out var userIdElement))
                             {
                                 userId = userIdElement.GetString();
@@ -4374,7 +4172,7 @@ namespace GenesysMigrationMCP.Services
         }
 
         // ===== MEDIUM PRIORITY GENESYS CLOUD API METHODS =====
-        
+
         /// <summary>
         /// Retrieves Journey data from Genesys Cloud
         /// </summary>
@@ -5290,12 +5088,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/fax/documents?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5349,12 +5147,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/greetings?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5408,12 +5206,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/configuration/schemas?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5467,12 +5265,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/conversations/messaging/integrations?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5526,12 +5324,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/widgets/deployments?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5585,12 +5383,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/workspaces?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5644,12 +5442,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/tokens/me?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5703,12 +5501,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/usage/query/executionresults?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5762,12 +5560,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/uploads?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5821,12 +5619,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/textbots/bots?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5880,12 +5678,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/search/suggest?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5939,12 +5737,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/responsemanagement/libraries?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -5998,12 +5796,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/processautomation/triggers?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6057,12 +5855,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/notifications/channels?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6116,12 +5914,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/marketplace/listings?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6175,12 +5973,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/languageunderstanding/domains?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6234,12 +6032,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/identityproviders?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6293,12 +6091,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/events/definitions?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6352,12 +6150,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/conversations/emails?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6411,12 +6209,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/flows/datatables?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6470,12 +6268,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/certificates?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6529,12 +6327,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/attributes?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         organizationId = organizationId,
@@ -6605,12 +6403,12 @@ namespace GenesysMigrationMCP.Services
 
                 var url = $"{_baseUrl}/api/v2/analytics/conversations/details/query?{string.Join("&", queryParams)}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         conversationAnalytics = data.TryGetProperty("conversations", out var conversations) ? conversations.EnumerateArray().ToArray() : new JsonElement[0],
@@ -6678,12 +6476,12 @@ namespace GenesysMigrationMCP.Services
 
                 var url = $"{_baseUrl}/api/v2/analytics/users/details/query?{string.Join("&", queryParams)}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         agentMetrics = data.TryGetProperty("userDetails", out var userDetails) ? userDetails.EnumerateArray().ToArray() : new JsonElement[0],
@@ -6752,15 +6550,15 @@ namespace GenesysMigrationMCP.Services
 
                 var url = $"{_baseUrl}/api/v2/analytics/conversations/details/query?{string.Join("&", queryParams)}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        sentimentData = data.TryGetProperty("conversations", out var conversations) ? 
+                        sentimentData = data.TryGetProperty("conversations", out var conversations) ?
                             conversations.EnumerateArray()
                                 .Where(c => c.TryGetProperty("participants", out var _))
                                 .SelectMany(c => c.GetProperty("participants").EnumerateArray())
@@ -6821,14 +6619,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/journey/segments?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Journey API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -6845,14 +6643,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/socialmedia/topics?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Social Media API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -6869,14 +6667,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/routing/queues?pageSize={pageSize}&pageNumber={pageNumber}&divisionId=*";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Callback API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -6893,14 +6691,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/gamification/leaderboard?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Gamification API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -6917,14 +6715,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/learning/modules?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Learning API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -6941,14 +6739,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/coaching/appointments?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Coaching API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -6965,14 +6763,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/workforcemanagement/businessunits?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Forecasting API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -6989,14 +6787,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/workforcemanagement/managementunits?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Scheduling API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -7013,14 +6811,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/audits/query?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Audit API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -7037,14 +6835,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/recording/recordingkeys?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Compliance API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -7061,14 +6859,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/gdpr/requests?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("GDPR API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -7085,14 +6883,14 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/utilities/certificate/details?pageSize={pageSize}&pageNumber={pageNumber}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<JsonElement>(content);
                     return data;
                 }
-                
+
                 _logger.LogWarning("Utilities API request failed with status: {StatusCode}", response.StatusCode);
                 return new { entities = new object[0], pageCount = 0, pageSize, pageNumber };
             }
@@ -7123,20 +6921,20 @@ namespace GenesysMigrationMCP.Services
                 if (includeAssignments)
                     queryParams.Add("expand=assignments");
 
-                var url = !string.IsNullOrEmpty(skillId) 
+                var url = !string.IsNullOrEmpty(skillId)
                     ? $"{_baseUrl}/api/v2/routing/skills/{skillId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/routing/skills?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        skills = !string.IsNullOrEmpty(skillId) ? new[] { data } : 
+                        skills = !string.IsNullOrEmpty(skillId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(skillId) ? 1 : 0),
                         pageSize = pageSize,
@@ -7190,20 +6988,20 @@ namespace GenesysMigrationMCP.Services
                     $"pageNumber={pageNumber}"
                 };
 
-                var url = !string.IsNullOrEmpty(groupId) 
+                var url = !string.IsNullOrEmpty(groupId)
                     ? $"{_baseUrl}/api/v2/routing/skillgroups/{groupId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/routing/skillgroups?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        skillGroups = !string.IsNullOrEmpty(groupId) ? new[] { data } : 
+                        skillGroups = !string.IsNullOrEmpty(groupId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(groupId) ? 1 : 0),
                         pageSize = pageSize,
@@ -7258,12 +7056,12 @@ namespace GenesysMigrationMCP.Services
 
                 var url = $"{_baseUrl}/api/v2/users/{userId}/routingskills?{string.Join("&", queryParams)}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         userId = userId,
@@ -7321,12 +7119,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/oauth/clients";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         oauthClients = data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0],
@@ -7377,12 +7175,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/oauth/scopes";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         scopes = data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0],
@@ -7436,18 +7234,18 @@ namespace GenesysMigrationMCP.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(_authUrl, content);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    var tokenResponse = JsonNet.JsonConvert.DeserializeObject<GenesysTokenResponse>(responseContent);
-                    
+                    var tokenResponse = Newtonsoft.Json.JsonConvert.DeserializeObject<GenesysTokenResponse>(responseContent);
+
                     if (tokenResponse != null && !string.IsNullOrEmpty(tokenResponse.AccessToken))
                     {
                         _accessToken = tokenResponse.AccessToken;
                         _tokenExpiration = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn - _tokenExpirationBuffer);
-                        
-                        _httpClient.DefaultRequestHeaders.Authorization = 
+
+                        _httpClient.DefaultRequestHeaders.Authorization =
                             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _accessToken);
 
                         return new
@@ -7504,20 +7302,20 @@ namespace GenesysMigrationMCP.Services
                     $"pageNumber={pageNumber}"
                 };
 
-                var url = !string.IsNullOrEmpty(sessionId) 
+                var url = !string.IsNullOrEmpty(sessionId)
                     ? $"{_baseUrl}/api/v2/cobrowse/sessions/{sessionId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/cobrowse/sessions?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        cobrowseSessions = !string.IsNullOrEmpty(sessionId) ? new[] { data } : 
+                        cobrowseSessions = !string.IsNullOrEmpty(sessionId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(sessionId) ? 1 : 0),
                         pageSize = pageSize,
@@ -7566,12 +7364,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/cobrowse/configuration";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         configuration = data,
@@ -7627,20 +7425,20 @@ namespace GenesysMigrationMCP.Services
                 if (endDate.HasValue)
                     queryParams.Add($"endDate={endDate.Value:yyyy-MM-ddTHH:mm:ssZ}");
 
-                var url = !string.IsNullOrEmpty(engagementId) 
+                var url = !string.IsNullOrEmpty(engagementId)
                     ? $"{_baseUrl}/api/v2/predictiveengagement/engagements/{engagementId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/predictiveengagement/engagements?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        engagements = !string.IsNullOrEmpty(engagementId) ? new[] { data } : 
+                        engagements = !string.IsNullOrEmpty(engagementId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(engagementId) ? 1 : 0),
                         pageSize = pageSize,
@@ -7695,20 +7493,20 @@ namespace GenesysMigrationMCP.Services
                     $"pageNumber={pageNumber}"
                 };
 
-                var url = !string.IsNullOrEmpty(modelId) 
+                var url = !string.IsNullOrEmpty(modelId)
                     ? $"{_baseUrl}/api/v2/predictiveengagement/models/{modelId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/predictiveengagement/models?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        models = !string.IsNullOrEmpty(modelId) ? new[] { data } : 
+                        models = !string.IsNullOrEmpty(modelId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(modelId) ? 1 : 0),
                         pageSize = pageSize,
@@ -7765,20 +7563,20 @@ namespace GenesysMigrationMCP.Services
                     $"pageNumber={pageNumber}"
                 };
 
-                var url = !string.IsNullOrEmpty(channelId) 
+                var url = !string.IsNullOrEmpty(channelId)
                     ? $"{_baseUrl}/api/v2/conversations/messaging/integrations/open/{channelId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/conversations/messaging/integrations/open?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        channels = !string.IsNullOrEmpty(channelId) ? new[] { data } : 
+                        channels = !string.IsNullOrEmpty(channelId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(channelId) ? 1 : 0),
                         pageSize = pageSize,
@@ -7839,12 +7637,12 @@ namespace GenesysMigrationMCP.Services
 
                 var url = $"{_baseUrl}/api/v2/conversations/messaging/integrations/open/{channelId}/messages?{string.Join("&", queryParams)}";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         channelId = channelId,
@@ -7911,20 +7709,20 @@ namespace GenesysMigrationMCP.Services
                 if (!string.IsNullOrEmpty(filter))
                     queryParams.Add($"filter={Uri.EscapeDataString(filter)}");
 
-                var url = !string.IsNullOrEmpty(userId) 
+                var url = !string.IsNullOrEmpty(userId)
                     ? $"{_baseUrl}/api/v2/scim/users/{userId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/scim/users?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        users = !string.IsNullOrEmpty(userId) ? new[] { data } : 
+                        users = !string.IsNullOrEmpty(userId) ? new[] { data } :
                             (data.TryGetProperty("Resources", out var resources) ? resources.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalResults = data.TryGetProperty("totalResults", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(userId) ? 1 : 0),
                         startIndex = startIndex,
@@ -7981,20 +7779,20 @@ namespace GenesysMigrationMCP.Services
                 if (!string.IsNullOrEmpty(filter))
                     queryParams.Add($"filter={Uri.EscapeDataString(filter)}");
 
-                var url = !string.IsNullOrEmpty(groupId) 
+                var url = !string.IsNullOrEmpty(groupId)
                     ? $"{_baseUrl}/api/v2/scim/groups/{groupId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/scim/groups?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        groups = !string.IsNullOrEmpty(groupId) ? new[] { data } : 
+                        groups = !string.IsNullOrEmpty(groupId) ? new[] { data } :
                             (data.TryGetProperty("Resources", out var resources) ? resources.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalResults = data.TryGetProperty("totalResults", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(groupId) ? 1 : 0),
                         startIndex = startIndex,
@@ -8048,12 +7846,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/webrtc/configuration";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         configuration = data,
@@ -8099,20 +7897,20 @@ namespace GenesysMigrationMCP.Services
                     $"pageNumber={pageNumber}"
                 };
 
-                var url = !string.IsNullOrEmpty(sessionId) 
+                var url = !string.IsNullOrEmpty(sessionId)
                     ? $"{_baseUrl}/api/v2/webrtc/sessions/{sessionId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/webrtc/sessions?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        sessions = !string.IsNullOrEmpty(sessionId) ? new[] { data } : 
+                        sessions = !string.IsNullOrEmpty(sessionId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(sessionId) ? 1 : 0),
                         pageSize = pageSize,
@@ -8169,20 +7967,20 @@ namespace GenesysMigrationMCP.Services
                     $"pageNumber={pageNumber}"
                 };
 
-                var url = !string.IsNullOrEmpty(endpointId) 
+                var url = !string.IsNullOrEmpty(endpointId)
                     ? $"{_baseUrl}/api/v2/telephony/providers/edges/endpoints/{endpointId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/telephony/providers/edges/endpoints?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        endpoints = !string.IsNullOrEmpty(endpointId) ? new[] { data } : 
+                        endpoints = !string.IsNullOrEmpty(endpointId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(endpointId) ? 1 : 0),
                         pageSize = pageSize,
@@ -8231,12 +8029,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/telephony/providers/edges/configuration";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         configuration = data,
@@ -8295,20 +8093,20 @@ namespace GenesysMigrationMCP.Services
                 if (radius.HasValue)
                     queryParams.Add($"radius={radius.Value}");
 
-                var url = !string.IsNullOrEmpty(locationId) 
+                var url = !string.IsNullOrEmpty(locationId)
                     ? $"{_baseUrl}/api/v2/locations/{locationId}?{string.Join("&", queryParams)}"
                     : $"{_baseUrl}/api/v2/locations?{string.Join("&", queryParams)}";
 
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
-                        locations = !string.IsNullOrEmpty(locationId) ? new[] { data } : 
+                        locations = !string.IsNullOrEmpty(locationId) ? new[] { data } :
                             (data.TryGetProperty("entities", out var entities) ? entities.EnumerateArray().ToArray() : new JsonElement[0]),
                         totalCount = data.TryGetProperty("total", out var total) ? total.GetInt32() : (!string.IsNullOrEmpty(locationId) ? 1 : 0),
                         pageSize = pageSize,
@@ -8360,12 +8158,12 @@ namespace GenesysMigrationMCP.Services
             {
                 var url = $"{_baseUrl}/api/v2/locations/settings";
                 var response = await _httpClient.GetAsync(url);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(content);
-                    
+
                     return new
                     {
                         settings = data,
@@ -9078,7 +8876,7 @@ namespace GenesysMigrationMCP.Services
             try
             {
                 var result = await MakeApiCallAsync("api/v2/scim/users", HttpMethod.Post, userData);
-                
+
                 if (!string.IsNullOrEmpty(result))
                 {
                     return JsonSerializer.Deserialize<object>(result);
@@ -9103,7 +8901,7 @@ namespace GenesysMigrationMCP.Services
             try
             {
                 var result = await MakeApiCallAsync($"api/v2/scim/users/{Uri.EscapeDataString(userId)}", HttpMethod.Put, userData);
-                
+
                 if (!string.IsNullOrEmpty(result))
                 {
                     return JsonSerializer.Deserialize<object>(result);
@@ -9239,7 +9037,7 @@ namespace GenesysMigrationMCP.Services
             try
             {
                 var result = await MakeApiCallAsync("api/v2/taskmanagement/workitems", HttpMethod.Post, workitemData);
-                
+
                 if (!string.IsNullOrEmpty(result))
                 {
                     return JsonSerializer.Deserialize<object>(result);
@@ -9264,7 +9062,7 @@ namespace GenesysMigrationMCP.Services
             try
             {
                 var result = await MakeApiCallAsync($"api/v2/taskmanagement/workitems/{Uri.EscapeDataString(workitemId)}", HttpMethod.Patch, workitemData);
-                
+
                 if (!string.IsNullOrEmpty(result))
                 {
                     return JsonSerializer.Deserialize<object>(result);
@@ -9456,7 +9254,7 @@ namespace GenesysMigrationMCP.Services
                 // Configurar intervalo de datas (padrão: últimas 24 horas)
                 var start = startDate ?? DateTime.UtcNow.AddDays(-1);
                 var end = endDate ?? DateTime.UtcNow;
-                
+
                 var requestBody = new
                 {
                     interval = $"{start:yyyy-MM-ddTHH:mm:ss}/{end:yyyy-MM-ddTHH:mm:ss}",
@@ -9583,7 +9381,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys fax documents - Page: {PageNumber}, Size: {PageSize}, Type: {DocumentType}", 
+                _logger.LogInformation("Getting Genesys fax documents - Page: {PageNumber}, Size: {PageSize}, Type: {DocumentType}",
                     pageNumber, pageSize, documentType);
 
                 var queryParams = new List<string>
@@ -9640,7 +9438,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys greetings - Page: {PageNumber}, Size: {PageSize}, Type: {GreetingType}", 
+                _logger.LogInformation("Getting Genesys greetings - Page: {PageNumber}, Size: {PageSize}, Type: {GreetingType}",
                     pageNumber, pageSize, greetingType);
 
                 var queryParams = new List<string>
@@ -9697,7 +9495,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys CLI commands - Page: {PageNumber}, Size: {PageSize}, Type: {CommandType}", 
+                _logger.LogInformation("Getting Genesys CLI commands - Page: {PageNumber}, Size: {PageSize}, Type: {CommandType}",
                     pageNumber, pageSize, commandType);
 
                 var queryParams = new List<string>
@@ -9754,7 +9552,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys messaging - Page: {PageNumber}, Size: {PageSize}, Type: {MessageType}", 
+                _logger.LogInformation("Getting Genesys messaging - Page: {PageNumber}, Size: {PageSize}, Type: {MessageType}",
                     pageNumber, pageSize, messageType);
 
                 var queryParams = new List<string>
@@ -9811,7 +9609,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys widgets - Page: {PageNumber}, Size: {PageSize}, Type: {WidgetType}", 
+                _logger.LogInformation("Getting Genesys widgets - Page: {PageNumber}, Size: {PageSize}, Type: {WidgetType}",
                     pageNumber, pageSize, widgetType);
 
                 var queryParams = new List<string>
@@ -9868,7 +9666,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys tokens - Page: {PageNumber}, Size: {PageSize}, Type: {TokenType}", 
+                _logger.LogInformation("Getting Genesys tokens - Page: {PageNumber}, Size: {PageSize}, Type: {TokenType}",
                     pageNumber, pageSize, tokenType);
 
                 var queryParams = new List<string>
@@ -9925,7 +9723,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys usage - Page: {PageNumber}, Size: {PageSize}, Type: {UsageType}", 
+                _logger.LogInformation("Getting Genesys usage - Page: {PageNumber}, Size: {PageSize}, Type: {UsageType}",
                     pageNumber, pageSize, usageType);
 
                 var queryParams = new List<string>
@@ -9982,7 +9780,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys uploads - Page: {PageNumber}, Size: {PageSize}, Type: {UploadType}", 
+                _logger.LogInformation("Getting Genesys uploads - Page: {PageNumber}, Size: {PageSize}, Type: {UploadType}",
                     pageNumber, pageSize, uploadType);
 
                 var queryParams = new List<string>
@@ -10039,7 +9837,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys textbots - Page: {PageNumber}, Size: {PageSize}, Type: {BotType}", 
+                _logger.LogInformation("Getting Genesys textbots - Page: {PageNumber}, Size: {PageSize}, Type: {BotType}",
                     pageNumber, pageSize, botType);
 
                 var queryParams = new List<string>
@@ -10096,7 +9894,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys search results - Page: {PageNumber}, Size: {PageSize}, Query: {Query}", 
+                _logger.LogInformation("Getting Genesys search results - Page: {PageNumber}, Size: {PageSize}, Query: {Query}",
                     pageNumber, pageSize, query);
 
                 var queryParams = new List<string>
@@ -10153,7 +9951,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys response management - Page: {PageNumber}, Size: {PageSize}, Type: {ResponseType}", 
+                _logger.LogInformation("Getting Genesys response management - Page: {PageNumber}, Size: {PageSize}, Type: {ResponseType}",
                     pageNumber, pageSize, responseType);
 
                 var queryParams = new List<string>
@@ -10210,7 +10008,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys process automation - Page: {PageNumber}, Size: {PageSize}, Type: {ProcessType}", 
+                _logger.LogInformation("Getting Genesys process automation - Page: {PageNumber}, Size: {PageSize}, Type: {ProcessType}",
                     pageNumber, pageSize, processType);
 
                 var queryParams = new List<string>
@@ -10267,7 +10065,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys marketplace - Page: {PageNumber}, Size: {PageSize}, Type: {ItemType}", 
+                _logger.LogInformation("Getting Genesys marketplace - Page: {PageNumber}, Size: {PageSize}, Type: {ItemType}",
                     pageNumber, pageSize, itemType);
 
                 var queryParams = new List<string>
@@ -10324,7 +10122,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys language understanding - Page: {PageNumber}, Size: {PageSize}, Language: {Language}", 
+                _logger.LogInformation("Getting Genesys language understanding - Page: {PageNumber}, Size: {PageSize}, Language: {Language}",
                     pageNumber, pageSize, language);
 
                 var queryParams = new List<string>
@@ -10381,7 +10179,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys identity providers - Page: {PageNumber}, Size: {PageSize}, Type: {ProviderType}", 
+                _logger.LogInformation("Getting Genesys identity providers - Page: {PageNumber}, Size: {PageSize}, Type: {ProviderType}",
                     pageNumber, pageSize, providerType);
 
                 var queryParams = new List<string>
@@ -10438,7 +10236,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys events - Page: {PageNumber}, Size: {PageSize}, Type: {EventType}", 
+                _logger.LogInformation("Getting Genesys events - Page: {PageNumber}, Size: {PageSize}, Type: {EventType}",
                     pageNumber, pageSize, eventType);
 
                 var queryParams = new List<string>
@@ -10495,7 +10293,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys email - Page: {PageNumber}, Size: {PageSize}, Type: {EmailType}", 
+                _logger.LogInformation("Getting Genesys email - Page: {PageNumber}, Size: {PageSize}, Type: {EmailType}",
                     pageNumber, pageSize, emailType);
 
                 var queryParams = new List<string>
@@ -10552,7 +10350,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys data tables - Page: {PageNumber}, Size: {PageSize}, Type: {TableType}", 
+                _logger.LogInformation("Getting Genesys data tables - Page: {PageNumber}, Size: {PageSize}, Type: {TableType}",
                     pageNumber, pageSize, tableType);
 
                 var queryParams = new List<string>
@@ -10609,7 +10407,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys certificates - Page: {PageNumber}, Size: {PageSize}, Type: {CertificateType}", 
+                _logger.LogInformation("Getting Genesys certificates - Page: {PageNumber}, Size: {PageSize}, Type: {CertificateType}",
                     pageNumber, pageSize, certificateType);
 
                 var queryParams = new List<string>
@@ -10666,7 +10464,7 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Getting Genesys attributes - Page: {PageNumber}, Size: {PageSize}, Type: {AttributeType}", 
+                _logger.LogInformation("Getting Genesys attributes - Page: {PageNumber}, Size: {PageSize}, Type: {AttributeType}",
                     pageNumber, pageSize, attributeType);
 
                 var queryParams = new List<string>
