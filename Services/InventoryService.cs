@@ -77,14 +77,7 @@ namespace GenesysMigrationMCP.Services
                     var flowsData = JsonSerializer.Deserialize<Dictionary<string, object>>(flowsResult.Content[0].Text);
                     if (flowsData.ContainsKey("flows") && flowsData["flows"] is JsonElement flowsElement)
                     {
-                        if (flowsElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.FlowsCount = flowsElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.FlowsCount = 0;
-                        }
+                        inventory.FlowsCount = flowsElement.GetArrayLength();
                     }
                 }
 
@@ -95,14 +88,7 @@ namespace GenesysMigrationMCP.Services
                     var usersData = JsonSerializer.Deserialize<Dictionary<string, object>>(usersResult.Content[0].Text);
                     if (usersData.ContainsKey("users") && usersData["users"] is JsonElement usersElement)
                     {
-                        if (usersElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.UsersCount = usersElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.UsersCount = 0;
-                        }
+                        inventory.UsersCount = usersElement.GetArrayLength();
                     }
                 }
 
@@ -113,14 +99,7 @@ namespace GenesysMigrationMCP.Services
                     var queuesData = JsonSerializer.Deserialize<Dictionary<string, object>>(queuesResult.Content[0].Text);
                     if (queuesData.ContainsKey("queues") && queuesData["queues"] is JsonElement queuesElement)
                     {
-                        if (queuesElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.QueuesCount = queuesElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.QueuesCount = 0;
-                        }
+                        inventory.QueuesCount = queuesElement.GetArrayLength();
                     }
                 }
 
@@ -131,14 +110,7 @@ namespace GenesysMigrationMCP.Services
                     var botsData = JsonSerializer.Deserialize<Dictionary<string, object>>(botsResult.Content[0].Text);
                     if (botsData.ContainsKey("bots") && botsData["bots"] is JsonElement botsElement)
                     {
-                        if (botsElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.BotsCount = botsElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.BotsCount = 0;
-                        }
+                        inventory.BotsCount = botsElement.GetArrayLength();
                     }
                 }
 
@@ -149,14 +121,7 @@ namespace GenesysMigrationMCP.Services
                     var skillsData = JsonSerializer.Deserialize<Dictionary<string, object>>(skillsResult.Content[0].Text);
                     if (skillsData.ContainsKey("skills") && skillsData["skills"] is JsonElement skillsElement)
                     {
-                        if (skillsElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.SkillsCount = skillsElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.SkillsCount = 0;
-                        }
+                        inventory.SkillsCount = skillsElement.GetArrayLength();
                     }
                 }
 
@@ -167,14 +132,7 @@ namespace GenesysMigrationMCP.Services
                     var routingData = JsonSerializer.Deserialize<Dictionary<string, object>>(routingResult.Content[0].Text);
                     if (routingData.ContainsKey("routingRules") && routingData["routingRules"] is JsonElement routingElement)
                     {
-                        if (routingElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.RoutingRulesCount = routingElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.RoutingRulesCount = 0;
-                        }
+                        inventory.RoutingRulesCount = routingElement.GetArrayLength();
                     }
                 }
 
@@ -185,14 +143,7 @@ namespace GenesysMigrationMCP.Services
                     var workspacesData = JsonSerializer.Deserialize<Dictionary<string, object>>(workspacesResult.Content[0].Text);
                     if (workspacesData.ContainsKey("workspaces") && workspacesData["workspaces"] is JsonElement workspacesElement)
                     {
-                        if (workspacesElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.WorkspacesCount = workspacesElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.WorkspacesCount = 0;
-                        }
+                        inventory.WorkspacesCount = workspacesElement.GetArrayLength();
                     }
                 }
 
@@ -203,14 +154,7 @@ namespace GenesysMigrationMCP.Services
                     var divisionsData = JsonSerializer.Deserialize<Dictionary<string, object>>(divisionsResult.Content[0].Text);
                     if (divisionsData.ContainsKey("divisions") && divisionsData["divisions"] is JsonElement divisionsElement)
                     {
-                        if (divisionsElement.ValueKind == JsonValueKind.Array)
-                        {
-                            inventory.DivisionsCount = divisionsElement.GetArrayLength();
-                        }
-                        else
-                        {
-                            inventory.DivisionsCount = 0;
-                        }
+                        inventory.DivisionsCount = divisionsElement.GetArrayLength();
                     }
                 }
 
