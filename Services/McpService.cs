@@ -102,6 +102,19 @@ namespace GenesysMigrationMCP.Services
                     "list_genesys_voicemail" => await ListGenesysVoicemail(arguments),
                     "list_genesys_permissions" => await ListGenesysPermissions(arguments),
 
+                    "list_genesys_alerting" => await ListGenesysAlerting(arguments),
+                    "list_genesys_webchat" => await ListGenesysWebChat(arguments),
+                    "list_genesys_outbound_campaigns" => await ListGenesysOutboundCampaigns(arguments),
+                    "list_genesys_contact_lists" => await ListGenesysContactLists(arguments),
+                    "list_genesys_content_management" => await ListGenesysContentManagement(arguments),
+                    "list_genesys_notification" => await ListGenesysNotification(arguments),
+                    "list_genesys_telephony" => await ListGenesysTelephony(arguments),
+                    "list_genesys_architect" => await ListGenesysArchitect(arguments),
+                    "list_genesys_quality_management" => await ListGenesysQualityManagement(arguments),
+                    "list_genesys_workforce_management" => await ListGenesysWorkforceManagement(arguments),
+                    "list_genesys_authorization" => await ListGenesysAuthorization(arguments),
+                    "list_genesys_billing" => await ListGenesysBilling(arguments),
+
                     "list_dynamics_agents" => await ListDynamicsAgents(arguments),
                     "list_dynamics_workstreams" => await ListDynamicsWorkstreams(arguments),
                     "list_dynamics_bots" => await ListDynamicsBots(arguments),
@@ -664,6 +677,224 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "organizationId" }
                     }
                 },
+
+
+                new Tool
+                {
+                    Name = "list_genesys_alerting",
+                    Description = "Lista configurações de alertas do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["alertType"] = new { type = "string", description = "Tipo de alerta específico" },
+                            ["enabled"] = new { type = "boolean", description = "Filtrar por alertas ativos", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_webchat",
+                    Description = "Lista configurações de webchat do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["deploymentId"] = new { type = "string", description = "ID do deployment específico" },
+                            ["status"] = new { type = "string", @enum = new[] { "all", "active", "inactive" }, description = "Status do webchat", @default = "all" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_outbound_campaigns",
+                    Description = "Lista campanhas outbound do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["campaignStatus"] = new { type = "string", @enum = new[] { "all", "on", "off", "complete", "stopping", "invalid" }, description = "Status da campanha", @default = "all" },
+                            ["divisionId"] = new { type = "string", description = "ID da divisão específica" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_contact_lists",
+                    Description = "Lista listas de contatos do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["includeImportStatus"] = new { type = "boolean", description = "Incluir status de importação", @default = true },
+                            ["includeSize"] = new { type = "boolean", description = "Incluir tamanho da lista", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_content_management",
+                    Description = "Lista conteúdo gerenciado do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["workspaceId"] = new { type = "string", description = "ID do workspace específico" },
+                            ["contentType"] = new { type = "string", description = "Tipo de conteúdo" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_notification",
+                    Description = "Lista configurações de notificação do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_telephony",
+                    Description = "Lista configurações de telefonia do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["edgeGroupId"] = new { type = "string", description = "ID do grupo de edge específico" },
+                            ["includeEdges"] = new { type = "boolean", description = "Incluir edges", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_architect",
+                    Description = "Lista flows e configurações do Architect do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["flowType"] = new { type = "string", @enum = new[] { "all", "inboundcall", "outboundcall", "inqueuecall", "speech", "securecall", "surveyinvite", "voice", "workflow", "workitem" }, description = "Tipo de flow", @default = "all" },
+                            ["includeConfiguration"] = new { type = "boolean", description = "Incluir configuração detalhada", @default = false },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_quality_management",
+                    Description = "Lista configurações de gestão de qualidade do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["includeEvaluationForms"] = new { type = "boolean", description = "Incluir formulários de avaliação", @default = true },
+                            ["includeCalibrationsettings"] = new { type = "boolean", description = "Incluir configurações de calibração", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_workforce_management",
+                    Description = "Lista configurações de workforce management do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["managementUnitId"] = new { type = "string", description = "ID da unidade de gerenciamento específica" },
+                            ["includeAgents"] = new { type = "boolean", description = "Incluir agentes", @default = true },
+                            ["includeSchedules"] = new { type = "boolean", description = "Incluir cronogramas", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_authorization",
+                    Description = "Lista configurações de autorização do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["includeRoles"] = new { type = "boolean", description = "Incluir roles", @default = true },
+                            ["includePermissions"] = new { type = "boolean", description = "Incluir permissões", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_billing",
+                    Description = "Lista informações de faturamento do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["billingPeriodIndex"] = new { type = "integer", description = "Índice do período de faturamento" },
+                            ["includeUsage"] = new { type = "boolean", description = "Incluir dados de uso", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+
 
                 new Tool
                 {
@@ -5284,6 +5515,379 @@ namespace GenesysMigrationMCP.Services
                 };
             }
         }
+
+        private async Task<object> ListGenesysAlerting(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys alerting - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    alerting = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetAlertingAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter alerting do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysWebChat(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys webchat - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    webchat = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetWebChatAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter webchat do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysOutboundCampaigns(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys outbound campaigns - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    outboundCampaigns = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetOutboundCampaignsAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter outbound campaigns do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysContactLists(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys contact lists - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    contactLists = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetContactListsAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter contact lists do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysContentManagement(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys content management - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    contentManagement = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetContentManagementAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter content management do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysNotification(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys notification - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    notification = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetNotificationAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter notification do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysTelephony(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys telephony - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    telephony = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetTelephonyAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter telephony do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysArchitect(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys architect - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    architect = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetArchitectAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter architect do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysQualityManagement(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys quality management - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    qualityManagement = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetQualityManagementAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter quality management do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysWorkforceManagement(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys workforce management - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    workforceManagement = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetWorkforceManagementAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter workforce management do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysAuthorization(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys authorization - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    authorization = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetAuthorizationAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter authorization do Genesys Cloud");
+                throw;
+            }
+        }
+
+        private async Task<object> ListGenesysBilling(Dictionary<string, object> arguments)
+        {
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+
+            _logger.LogInformation($"Listing Genesys billing - pageSize: {pageSize}, pageNumber: {pageNumber}");
+
+            if (_genesysClient == null)
+            {
+                _logger.LogWarning("GenesysCloudClient não está disponível. Retornando dados simulados.");
+                return new
+                {
+                    billing = new object[0],
+                    totalCount = 0,
+                    pageSize = pageSize,
+                    pageNumber = pageNumber,
+                    message = "GenesysCloudClient não disponível - usando dados simulados"
+                };
+            }
+
+            try
+            {
+                return await _genesysClient.GetBillingAsync(pageSize, pageNumber);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter billing do Genesys Cloud");
+                throw;
+            }
+        }
+
 
         private async Task<object> ListGenesysSchedules(Dictionary<string, object> arguments)
         {
