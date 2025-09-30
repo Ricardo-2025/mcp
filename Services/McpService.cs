@@ -69,11 +69,9 @@ namespace GenesysMigrationMCP.Services
                 {
                     "extract_genesys_flows" => await ExtractGenesysFlows(arguments),
                     "migrate_to_dynamics" => await MigrateToDynamics(arguments),
-                    "validate_migration" => await ValidateMigration(arguments),
                     "get_migration_status" => await GetMigrationStatus(arguments),
                     "list_genesys_flows" => await ListGenesysFlows(arguments),
                     "create_dynamics_workstream" => await CreateDynamicsWorkstream(arguments),
-                    // Novas ferramentas para visualização do Genesys
                     "list_genesys_users" => await ListGenesysUsers(arguments),
                     "list_genesys_queues" => await ListGenesysQueues(arguments),
                     "list_genesys_bots" => await ListGenesysBots(arguments),
@@ -81,46 +79,45 @@ namespace GenesysMigrationMCP.Services
                     "get_genesys_queue_details" => await GetGenesysQueueDetails(arguments),
                     "get_genesys_flow_details" => await GetGenesysFlowDetails(arguments),
                     "get_genesys_bot_details" => await GetGenesysBotDetails(arguments),
-                    
-                    // Ferramentas adicionais do Genesys
                     "list_genesys_skills" => await ListGenesysSkills(arguments),
                     "list_genesys_routing_rules" => await ListGenesysRoutingRules(arguments),
                     "list_genesys_workspaces" => await ListGenesysWorkspaces(arguments),
                     "list_genesys_divisions" => await ListGenesysDivisions(arguments),
+                    "list_genesys_groups" => await ListGenesysGroups(arguments),
+                    "list_genesys_roles" => await ListGenesysRoles(arguments),
+                    "list_genesys_locations" => await ListGenesysLocations(arguments),
+                    "list_genesys_analytics" => await ListGenesysAnalytics(arguments),
+                    "list_genesys_conversations" => await ListGenesysConversations(arguments),
+                    "list_genesys_presence" => await ListGenesysPresence(arguments),
+                    "list_genesys_integrations" => await ListGenesysIntegrations(arguments),
+                    "list_genesys_external_contacts" => await ListGenesysExternalContacts(arguments),
+                    "list_genesys_scripts" => await ListGenesysScripts(arguments),
 
-                    // ===== FERRAMENTAS DO DYNAMICS CONTACT CENTER =====
+                    "list_genesys_recordings" => await ListGenesysRecordings(arguments),
+                    "list_genesys_schedules" => await ListGenesysSchedules(arguments),
+                    "list_genesys_evaluations" => await ListGenesysEvaluations(arguments),
+                    "list_genesys_campaigns" => await ListGenesysCampaigns(arguments),
+                    "list_genesys_stations" => await ListGenesysStations(arguments),
+                    "list_genesys_knowledge" => await ListGenesysKnowledge(arguments),
+                    "list_genesys_voicemail" => await ListGenesysVoicemail(arguments),
+                    "list_genesys_permissions" => await ListGenesysPermissions(arguments),
+
                     "list_dynamics_agents" => await ListDynamicsAgents(arguments),
                     "list_dynamics_workstreams" => await ListDynamicsWorkstreams(arguments),
                     "list_dynamics_bots" => await ListDynamicsBots(arguments),
                     "get_dynamics_agent_details" => await GetDynamicsAgentDetails(arguments),
                     "get_dynamics_workstream_details" => await GetDynamicsWorkstreamDetails(arguments),
                     "get_dynamics_bot_details" => await GetDynamicsBotDetails(arguments),
-                    // ===== FERRAMENTAS DE MIGRAÇÃO GRANULAR =====
                     "migrate_users" => await MigrateUsers(arguments),
                     "migrate_queues" => await MigrateQueues(arguments),
                     "migrate_flows" => await MigrateFlows(arguments),
                     "migrate_bots" => await MigrateBots(arguments),
                     "migrate_skills" => await MigrateSkills(arguments),
                     "migrate_routing_rules" => await MigrateRoutingRules(arguments),
-                    // ===== FERRAMENTAS DE COMPARAÇÃO =====
                     "compare_users" => await CompareUsers(arguments),
                     "compare_queues" => await CompareQueues(arguments),
                     "compare_flows" => await CompareFlows(arguments),
                     "compare_bots" => await CompareBots(arguments),
-                    "validate_migration_comparison" => await ValidateMigrationComparison(arguments),
-                    // ===== FERRAMENTAS DE ROLLBACK E RECUPERAÇÃO =====
-                    "create_migration_backup" => await CreateMigrationBackup(arguments),
-                    "rollback_migration" => await RollbackMigration(arguments),
-                    "list_migration_backups" => await ListMigrationBackups(arguments),
-                    "validate_backup_integrity" => await ValidateBackupIntegrity(arguments),
-                    "get_rollback_status" => await GetRollbackStatus(arguments),
-                    // ===== FERRAMENTAS DE RELATÓRIOS E DASHBOARDS =====
-                    "generate_migration_report" => await GenerateMigrationReport(arguments),
-                    "get_migration_dashboard" => await GetMigrationDashboard(arguments),
-                    "get_performance_metrics" => await GetPerformanceMetrics(arguments),
-                    "get_migration_analytics" => await GetMigrationAnalytics(arguments),
-                    "export_migration_data" => await ExportMigrationData(arguments),
-                    // ===== FERRAMENTAS DE INVENTÁRIO =====
                     "get_complete_inventory" => await GetCompleteInventory(arguments),
                     "get_genesys_inventory" => await GetGenesysInventory(arguments),
                     "get_dynamics_inventory" => await GetDynamicsInventory(arguments),
@@ -196,35 +193,6 @@ namespace GenesysMigrationMCP.Services
                 },
                 new Tool
                 {
-                    Name = "validate_migration",
-                    Description = "Valida a migração comparando configurações entre Genesys e Dynamics",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["migrationId"] = new { type = "string", description = "ID da migração para validar" },
-                            ["validationType"] = new { type = "string", @enum = new[] { "structure", "data", "functionality", "complete" }, description = "Tipo de validação a executar" }
-                        },
-                        Required = new[] { "migrationId" }
-                    }
-                },
-                new Tool
-                {
-                    Name = "get_migration_status",
-                    Description = "Obtém o status atual de uma migração em andamento",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["migrationId"] = new { type = "string", description = "ID da migração" }
-                        },
-                        Required = new[] { "migrationId" }
-                    }
-                },
-                new Tool
-                {
                     Name = "list_genesys_flows",
                     Description = "Lista todos os flows disponíveis no Genesys Cloud",
                     InputSchema = new ToolInputSchema
@@ -255,7 +223,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "workstreamName", "channelType" }
                     }
                 },
-                // Novas ferramentas para visualização do Genesys
                 new Tool
                 {
                     Name = "list_genesys_users",
@@ -375,8 +342,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "organizationId", "botId" }
                     }
                 },
-                
-                // Ferramentas adicionais do Genesys
                 new Tool
                 {
                     Name = "list_genesys_skills",
@@ -392,7 +357,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "organizationId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "list_genesys_routing_rules",
@@ -408,7 +372,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "organizationId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "list_genesys_workspaces",
@@ -424,7 +387,301 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "organizationId" }
                     }
                 },
-                
+                new Tool
+                {
+                    Name = "list_genesys_groups",
+                    Description = "Lista grupos de usuários do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["groupType"] = new { type = "string", description = "Tipo de grupo (official, social, all)", @default = "all" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+                new Tool
+                {
+                    Name = "list_genesys_roles",
+                    Description = "Lista roles e permissões do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["includePermissions"] = new { type = "boolean", description = "Incluir permissões detalhadas", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+                new Tool
+                {
+                    Name = "list_genesys_conversations",
+                    Description = "Lista conversas e interações do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["dateFrom"] = new { type = "string", description = "Data inicial (YYYY-MM-DD)" },
+                            ["dateTo"] = new { type = "string", description = "Data final (YYYY-MM-DD)" },
+                            ["mediaType"] = new { type = "string", @enum = new[] { "all", "voice", "chat", "email", "callback" }, description = "Tipo de mídia", @default = "all" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+                new Tool
+                {
+                    Name = "list_genesys_analytics",
+                    Description = "Lista dados analíticos do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["dateFrom"] = new { type = "string", description = "Data inicial (YYYY-MM-DD)" },
+                            ["dateTo"] = new { type = "string", description = "Data final (YYYY-MM-DD)" },
+                            ["metrics"] = new { type = "array", items = new { type = "string" }, description = "Métricas específicas para incluir" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+                new Tool
+                {
+                    Name = "list_genesys_presence",
+                    Description = "Lista status de presença dos usuários do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["userId"] = new { type = "string", description = "ID do usuário específico" },
+                            ["includeDefinitions"] = new { type = "boolean", description = "Incluir definições de presença", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+                new Tool
+                {
+                    Name = "list_genesys_integrations",
+                    Description = "Lista integrações configuradas no Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["integrationType"] = new { type = "string", description = "Tipo de integração específica" },
+                            ["status"] = new { type = "string", @enum = new[] { "all", "active", "inactive" }, description = "Status da integração", @default = "all" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+                new Tool
+                {
+                    Name = "list_genesys_external_contacts",
+                    Description = "Lista contatos externos do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["searchTerm"] = new { type = "string", description = "Termo de busca para filtrar contatos" },
+                            ["contactListId"] = new { type = "string", description = "ID da lista de contatos específica" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+                new Tool
+                {
+                    Name = "list_genesys_scripts",
+                    Description = "Lista scripts de atendimento do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["scriptType"] = new { type = "string", description = "Tipo de script" },
+                            ["published"] = new { type = "boolean", description = "Apenas scripts publicados", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_recordings",
+                    Description = "Lista gravações de conversas do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["dateFrom"] = new { type = "string", description = "Data inicial (YYYY-MM-DD)" },
+                            ["dateTo"] = new { type = "string", description = "Data final (YYYY-MM-DD)" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_schedules",
+                    Description = "Lista cronogramas de workforce management do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["managementUnitId"] = new { type = "string", description = "ID da unidade de gerenciamento" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_evaluations",
+                    Description = "Lista avaliações de qualidade do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["evaluatorId"] = new { type = "string", description = "ID do avaliador" },
+                            ["agentId"] = new { type = "string", description = "ID do agente avaliado" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_campaigns",
+                    Description = "Lista campanhas outbound do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["status"] = new { type = "string", @enum = new[] { "all", "active", "inactive", "complete" }, description = "Filtro por status da campanha", @default = "all" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_stations",
+                    Description = "Lista estações telefônicas do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["stationType"] = new { type = "string", @enum = new[] { "all", "inin_webrtc_softphone", "inin_remote", "inin_physical" }, description = "Tipo de estação", @default = "all" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_knowledge",
+                    Description = "Lista bases de conhecimento do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["language"] = new { type = "string", description = "Filtro por idioma" },
+                            ["published"] = new { type = "boolean", description = "Apenas bases publicadas", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_voicemail",
+                    Description = "Lista mensagens de correio de voz do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["userId"] = new { type = "string", description = "ID do usuário" },
+                            ["read"] = new { type = "boolean", description = "Filtro por mensagens lidas/não lidas" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_permissions",
+                    Description = "Lista permissões detalhadas do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["domain"] = new { type = "string", description = "Domínio de permissão específico" },
+                            ["includeActions"] = new { type = "boolean", description = "Incluir ações disponíveis", @default = true },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "list_genesys_locations",
+                    Description = "Lista localizações geográficas do Genesys Cloud",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["country"] = new { type = "string", description = "Filtro por país" },
+                            ["state"] = new { type = "string", description = "Filtro por estado/província" },
+                            ["pageSize"] = new { type = "integer", description = "Número de registros por página", @default = 25, minimum = 1, maximum = 100 }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
                 new Tool
                 {
                     Name = "list_genesys_divisions",
@@ -440,9 +697,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "organizationId" }
                     }
                 },
-                
-                // ===== FERRAMENTAS DO DYNAMICS CONTACT CENTER =====
-                
                 new Tool
                 {
                     Name = "list_dynamics_agents",
@@ -460,7 +714,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "environmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "list_dynamics_workstreams",
@@ -478,7 +731,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "environmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "list_dynamics_bots",
@@ -496,7 +748,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "environmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "get_dynamics_agent_details",
@@ -514,7 +765,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "environmentId", "agentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "get_dynamics_workstream_details",
@@ -532,7 +782,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "environmentId", "workstreamId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "get_dynamics_bot_details",
@@ -550,9 +799,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "environmentId", "botId" }
                     }
                 },
-                
-                // ===== FERRAMENTAS DE MIGRAÇÃO GRANULAR =====
-                
                 new Tool
                 {
                     Name = "migrate_users",
@@ -572,7 +818,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "migrate_queues",
@@ -592,7 +837,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "migrate_flows",
@@ -612,7 +856,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "migrate_bots",
@@ -632,7 +875,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "migrate_skills",
@@ -651,7 +893,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "migrate_routing_rules",
@@ -670,9 +911,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
-                // ===== FERRAMENTAS DE COMPARAÇÃO =====
-                
                 new Tool
                 {
                     Name = "compare_users",
@@ -692,7 +930,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "compare_queues",
@@ -712,7 +949,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "compare_flows",
@@ -732,7 +968,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "compare_bots",
@@ -752,234 +987,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
                     }
                 },
-                
-                new Tool
-                {
-                    Name = "validate_migration_comparison",
-                    Description = "Valida uma migração completa comparando todos os componentes entre Genesys e Dynamics",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["sourceOrganizationId"] = new { type = "string", description = "ID da organização Genesys" },
-                            ["targetEnvironmentId"] = new { type = "string", description = "ID do ambiente Dynamics" },
-                            ["migrationId"] = new { type = "string", description = "ID da migração para validar" },
-                            ["includeUsers"] = new { type = "boolean", description = "Validar usuários", @default = true },
-                            ["includeQueues"] = new { type = "boolean", description = "Validar filas", @default = true },
-                            ["includeFlows"] = new { type = "boolean", description = "Validar flows", @default = true },
-                            ["includeBots"] = new { type = "boolean", description = "Validar bots", @default = true },
-                            ["generateReport"] = new { type = "boolean", description = "Gerar relatório detalhado", @default = true }
-                        },
-                        Required = new[] { "sourceOrganizationId", "targetEnvironmentId" }
-                    }
-                },
-                
-                // ===== FERRAMENTAS DE ROLLBACK E RECUPERAÇÃO =====
-                
-                new Tool
-                {
-                    Name = "create_migration_backup",
-                    Description = "Cria backup completo antes da migração para permitir rollback",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["sourceOrganizationId"] = new { type = "string", description = "ID da organização Genesys" },
-                            ["targetEnvironmentId"] = new { type = "string", description = "ID do ambiente Dynamics" },
-                            ["migrationId"] = new { type = "string", description = "ID da migração" },
-                            ["includeUsers"] = new { type = "boolean", description = "Incluir backup de usuários", @default = true },
-                            ["includeQueues"] = new { type = "boolean", description = "Incluir backup de filas", @default = true },
-                            ["includeFlows"] = new { type = "boolean", description = "Incluir backup de flows", @default = true },
-                            ["includeBots"] = new { type = "boolean", description = "Incluir backup de bots", @default = true },
-                            ["compressionLevel"] = new { type = "string", description = "Nível de compressão (low, medium, high)", @default = "medium" }
-                        },
-                        Required = new[] { "sourceOrganizationId", "targetEnvironmentId", "migrationId" }
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "rollback_migration",
-                    Description = "Executa rollback de uma migração usando backup criado anteriormente",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["migrationId"] = new { type = "string", description = "ID da migração para rollback" },
-                            ["backupId"] = new { type = "string", description = "ID do backup para restaurar" },
-                            ["targetEnvironmentId"] = new { type = "string", description = "ID do ambiente Dynamics" },
-                            ["rollbackScope"] = new { type = "string", description = "Escopo do rollback (full, partial)", @default = "full" },
-                            ["includeUsers"] = new { type = "boolean", description = "Rollback de usuários", @default = true },
-                            ["includeQueues"] = new { type = "boolean", description = "Rollback de filas", @default = true },
-                            ["includeFlows"] = new { type = "boolean", description = "Rollback de flows", @default = true },
-                            ["includeBots"] = new { type = "boolean", description = "Rollback de bots", @default = true },
-                            ["dryRun"] = new { type = "boolean", description = "Simular rollback sem executar", @default = false }
-                        },
-                        Required = new[] { "migrationId", "backupId", "targetEnvironmentId" }
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "list_migration_backups",
-                    Description = "Lista todos os backups disponíveis para rollback",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["migrationId"] = new { type = "string", description = "Filtrar por ID de migração específica" },
-                            ["targetEnvironmentId"] = new { type = "string", description = "Filtrar por ambiente Dynamics" },
-                            ["dateFrom"] = new { type = "string", description = "Data inicial (YYYY-MM-DD)" },
-                            ["dateTo"] = new { type = "string", description = "Data final (YYYY-MM-DD)" },
-                            ["includeDetails"] = new { type = "boolean", description = "Incluir detalhes dos backups", @default = false },
-                            ["sortBy"] = new { type = "string", description = "Ordenar por (date, size, migration)", @default = "date" },
-                            ["limit"] = new { type = "integer", description = "Limite de resultados", @default = 50 }
-                        },
-                        Required = new string[0]
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "validate_backup_integrity",
-                    Description = "Valida a integridade de um backup antes do rollback",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["backupId"] = new { type = "string", description = "ID do backup para validar" },
-                            ["migrationId"] = new { type = "string", description = "ID da migração associada" },
-                            ["checkChecksum"] = new { type = "boolean", description = "Verificar checksums dos arquivos", @default = true },
-                            ["validateStructure"] = new { type = "boolean", description = "Validar estrutura dos dados", @default = true },
-                            ["testRestore"] = new { type = "boolean", description = "Testar restauração em ambiente isolado", @default = false }
-                        },
-                        Required = new[] { "backupId" }
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "get_rollback_status",
-                    Description = "Obtém status de um processo de rollback em andamento",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["rollbackId"] = new { type = "string", description = "ID do processo de rollback" },
-                            ["includeDetails"] = new { type = "boolean", description = "Incluir detalhes do progresso", @default = true },
-                            ["includeLogs"] = new { type = "boolean", description = "Incluir logs do processo", @default = false }
-                        },
-                        Required = new[] { "rollbackId" }
-                    }
-                },
-                
-                // ===== FERRAMENTAS DE RELATÓRIOS E DASHBOARDS =====
-                
-                new Tool
-                {
-                    Name = "generate_migration_report",
-                    Description = "Gera relatório completo de uma migração executada",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["migrationId"] = new { type = "string", description = "ID da migração para gerar relatório" },
-                            ["reportType"] = new { type = "string", description = "Tipo de relatório", @enum = new[] { "summary", "detailed", "executive", "technical" }, @default = "summary" },
-                            ["includeMetrics"] = new { type = "boolean", description = "Incluir métricas de performance", @default = true },
-                            ["includeIssues"] = new { type = "boolean", description = "Incluir lista de problemas encontrados", @default = true },
-                            ["includeRecommendations"] = new { type = "boolean", description = "Incluir recomendações", @default = true },
-                            ["format"] = new { type = "string", description = "Formato do relatório", @enum = new[] { "json", "html", "pdf", "csv" }, @default = "json" }
-                        },
-                        Required = new[] { "migrationId" }
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "get_migration_dashboard",
-                    Description = "Obtém dados para dashboard de migrações em tempo real",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["organizationId"] = new { type = "string", description = "ID da organização" },
-                            ["timeRange"] = new { type = "string", description = "Período de tempo", @enum = new[] { "24h", "7d", "30d", "90d" }, @default = "7d" },
-                            ["includeActive"] = new { type = "boolean", description = "Incluir migrações ativas", @default = true },
-                            ["includeCompleted"] = new { type = "boolean", description = "Incluir migrações concluídas", @default = true },
-                            ["includeFailed"] = new { type = "boolean", description = "Incluir migrações falhadas", @default = true },
-                            ["groupBy"] = new { type = "string", description = "Agrupar dados por", @enum = new[] { "date", "type", "status", "environment" }, @default = "date" }
-                        },
-                        Required = new[] { "organizationId" }
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "get_performance_metrics",
-                    Description = "Obtém métricas de performance das migrações",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["migrationId"] = new { type = "string", description = "ID da migração específica (opcional)" },
-                            ["organizationId"] = new { type = "string", description = "ID da organização" },
-                            ["metricTypes"] = new { type = "array", items = new { type = "string" }, description = "Tipos de métricas", @default = new[] { "duration", "throughput", "errors", "success_rate" } },
-                            ["timeRange"] = new { type = "string", description = "Período de análise", @enum = new[] { "1h", "24h", "7d", "30d" }, @default = "24h" },
-                            ["includeComparison"] = new { type = "boolean", description = "Incluir comparação com período anterior", @default = true }
-                        },
-                        Required = new[] { "organizationId" }
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "get_migration_analytics",
-                    Description = "Obtém análises avançadas e insights das migrações",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["organizationId"] = new { type = "string", description = "ID da organização" },
-                            ["analysisType"] = new { type = "string", description = "Tipo de análise", @enum = new[] { "trends", "patterns", "bottlenecks", "predictions" }, @default = "trends" },
-                            ["timeRange"] = new { type = "string", description = "Período de análise", @enum = new[] { "7d", "30d", "90d", "1y" }, @default = "30d" },
-                            ["entityTypes"] = new { type = "array", items = new { type = "string" }, description = "Tipos de entidades para analisar", @default = new[] { "users", "queues", "flows", "bots" } },
-                            ["includeRecommendations"] = new { type = "boolean", description = "Incluir recomendações baseadas em IA", @default = true }
-                        },
-                        Required = new[] { "organizationId" }
-                    }
-                },
-                
-                new Tool
-                {
-                    Name = "export_migration_data",
-                    Description = "Exporta dados de migração em diferentes formatos",
-                    InputSchema = new ToolInputSchema
-                    {
-                        Type = "object",
-                        Properties = new Dictionary<string, object>
-                        {
-                            ["migrationId"] = new { type = "string", description = "ID da migração para exportar" },
-                            ["dataTypes"] = new { type = "array", items = new { type = "string" }, description = "Tipos de dados para exportar", @default = new[] { "logs", "metrics", "results", "errors" } },
-                            ["format"] = new { type = "string", description = "Formato de exportação", @enum = new[] { "json", "csv", "excel", "xml" }, @default = "json" },
-                            ["includeMetadata"] = new { type = "boolean", description = "Incluir metadados", @default = true },
-                            ["compression"] = new { type = "string", description = "Tipo de compressão", @enum = new[] { "none", "zip", "gzip" }, @default = "none" },
-                            ["dateRange"] = new { type = "object", description = "Filtro de data (opcional)" }
-                        },
-                        Required = new[] { "migrationId" }
-                    }
-                },
-                
-                // Ferramentas de Inventário
                 new Tool
                 {
                     Name = "get_complete_inventory",
@@ -995,7 +1002,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new string[] { }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "get_genesys_inventory",
@@ -1010,7 +1016,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new string[] { }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "get_dynamics_inventory",
@@ -1025,7 +1030,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new string[] { }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "compare_inventories",
@@ -1041,7 +1045,6 @@ namespace GenesysMigrationMCP.Services
                         Required = new string[] { }
                     }
                 },
-                
                 new Tool
                 {
                     Name = "export_inventory_report",
@@ -4681,40 +4684,1482 @@ namespace GenesysMigrationMCP.Services
                    throw;
                }
            }
-           
-       private async Task<object> ListGenesysDivisions(Dictionary<string, object> arguments)
-       {
+
+        public async Task<object> ListGenesysRecordings(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? dateFrom = null;
+            string? dateTo = null;
+
             try
             {
-                _logger.LogInformation("Listando divisões do Genesys Cloud");
-                
-                // Simular resposta de divisions (implementação básica)
-                var divisions = new List<object>
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
                 {
-                    new { id = "division_001", name = "North America", description = "North American Operations", state = "active" },
-                    new { id = "division_002", name = "Europe", description = "European Operations", state = "active" },
-                    new { id = "division_003", name = "Asia Pacific", description = "Asia Pacific Operations", state = "active" }
-                };
-                
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("dateFrom"))
+                {
+                    dateFrom = arguments["dateFrom"].ToString();
+                }
+
+                if (arguments.ContainsKey("dateTo"))
+                {
+                    dateTo = arguments["dateTo"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys recordings with pageSize: {PageSize}, pageNumber: {PageNumber}, dateFrom: {DateFrom}, dateTo: {DateTo}", pageSize, pageNumber, dateFrom, dateTo);
+
+                var result = await _genesysClient.GetRecordingsAsync(null, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("recordings") && resultDict["recordings"] is IEnumerable<object> recordings && recordings.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No recordings found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No recordings found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
                 return new
                 {
-                    divisions = divisions,
-                    totalCount = divisions.Count,
-                    organizationId = arguments.GetValueOrDefault("organizationId"),
-                    timestamp = DateTime.UtcNow
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No recordings data available."
+                        }
+                    }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao listar divisões do Genesys");
-                throw;
+                _logger.LogError(ex, "Error retrieving Genesys recordings");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
             }
         }
-       
-       /// <summary>
-       /// Mapeia o tipo de flow do Genesys para o StreamSource do Dynamics
-       /// </summary>
-       private int GetStreamSourceByFlowType(string? flowType)
+
+        public async Task<object> ListGenesysEvaluations(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? evaluatorId = null;
+            string? agentId = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("evaluatorId"))
+                {
+                    evaluatorId = arguments["evaluatorId"].ToString();
+                }
+
+                if (arguments.ContainsKey("agentId"))
+                {
+                    agentId = arguments["agentId"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys evaluations with pageSize: {PageSize}, pageNumber: {PageNumber}, evaluatorId: {EvaluatorId}, agentId: {AgentId}", pageSize, pageNumber, evaluatorId, agentId);
+
+                var result = await _genesysClient.GetEvaluationsAsync(evaluatorId, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("evaluations") && resultDict["evaluations"] is IEnumerable<object> evaluations && evaluations.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No evaluations found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No evaluations found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No evaluations data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys evaluations");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysCampaigns(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? status = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("status"))
+                {
+                    status = arguments["status"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys campaigns with pageSize: {PageSize}, pageNumber: {PageNumber}, status: {Status}", pageSize, pageNumber, status);
+
+                var result = await _genesysClient.GetCampaignsAsync(status, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("campaigns") && resultDict["campaigns"] is IEnumerable<object> campaigns && campaigns.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No campaigns found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No campaigns found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No campaigns data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys campaigns");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysStations(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? stationType = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("stationType"))
+                {
+                    stationType = arguments["stationType"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys stations with pageSize: {PageSize}, pageNumber: {PageNumber}, stationType: {StationType}", pageSize, pageNumber, stationType);
+
+                var result = await _genesysClient.GetStationsAsync(stationType, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("stations") && resultDict["stations"] is IEnumerable<object> stations && stations.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No stations found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No stations found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No stations data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys stations");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysKnowledge(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? language = null;
+            bool? published = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("language"))
+                {
+                    language = arguments["language"].ToString();
+                }
+
+                if (arguments.ContainsKey("published") && bool.TryParse(arguments["published"].ToString(), out var parsedPublished))
+                {
+                    published = parsedPublished;
+                }
+
+                _logger.LogInformation("Retrieving Genesys knowledge bases with pageSize: {PageSize}, pageNumber: {PageNumber}, language: {Language}, published: {Published}", pageSize, pageNumber, language, published);
+
+                var result = await _genesysClient.GetKnowledgeAsync(null, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("knowledgeBases") && resultDict["knowledgeBases"] is IEnumerable<object> knowledgeBases && knowledgeBases.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No knowledge bases found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No knowledge bases found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No knowledge bases data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys knowledge bases");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysPermissions(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? domain = null;
+            bool? includeActions = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("domain"))
+                {
+                    domain = arguments["domain"].ToString();
+                }
+
+                if (arguments.ContainsKey("includeActions") && bool.TryParse(arguments["includeActions"].ToString(), out var parsedIncludeActions))
+                {
+                    includeActions = parsedIncludeActions;
+                }
+
+                _logger.LogInformation("Retrieving Genesys permissions with pageSize: {PageSize}, pageNumber: {PageNumber}, domain: {Domain}, includeActions: {IncludeActions}", pageSize, pageNumber, domain, includeActions);
+
+                var result = await _genesysClient.GetPermissionsAsync(domain, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("permissions") && resultDict["permissions"] is IEnumerable<object> permissions && permissions.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No permissions found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No permissions found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No permissions data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys permissions");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        private async Task<object> ListGenesysSchedules(Dictionary<string, object> arguments)
+        {
+            var organizationId = arguments.GetValueOrDefault("organizationId")?.ToString();
+            var managementUnitId = arguments.GetValueOrDefault("managementUnitId")?.ToString();
+            var pageSize = Convert.ToInt32(arguments.GetValueOrDefault("pageSize", 25));
+            var pageNumber = Convert.ToInt32(arguments.GetValueOrDefault("pageNumber", 1));
+
+            _logger.LogInformation($"Listing Genesys schedules for organization: {organizationId}");
+
+            try
+            {
+                var result = await _genesysClient.GetSchedulesAsync(managementUnitId, pageSize, pageNumber);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys schedules");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        private async Task<object> ListGenesysVoicemail(Dictionary<string, object> arguments)
+        {
+            var organizationId = arguments.GetValueOrDefault("organizationId")?.ToString();
+            var userId = arguments.GetValueOrDefault("userId")?.ToString();
+            var pageSize = Convert.ToInt32(arguments.GetValueOrDefault("pageSize", 25));
+            var pageNumber = Convert.ToInt32(arguments.GetValueOrDefault("pageNumber", 1));
+
+            _logger.LogInformation($"Listing Genesys voicemail for organization: {organizationId}");
+
+            try
+            {
+                var result = await _genesysClient.GetVoicemailAsync(userId, pageSize, pageNumber);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys voicemail");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysScripts(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? name = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("name"))
+                {
+                    name = arguments["name"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys scripts with pageSize: {PageSize}, pageNumber: {PageNumber}, name: {Name}", pageSize, pageNumber, name);
+
+                var result = await _genesysClient.GetScriptsAsync(name, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("scripts") && resultDict["scripts"] is IEnumerable<object> scripts && scripts.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No scripts found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No scripts found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No scripts data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys scripts");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysExternalContacts(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? name = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("name"))
+                {
+                    name = arguments["name"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys external contacts with pageSize: {PageSize}, pageNumber: {PageNumber}, name: {Name}", pageSize, pageNumber, name);
+
+                var result = await _genesysClient.GetExternalContactsAsync(name, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("externalContacts") && resultDict["externalContacts"] is IEnumerable<object> contacts && contacts.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No external contacts found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No external contacts found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No external contacts data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys external contacts");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysIntegrations(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? integrationType = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("integrationType"))
+                {
+                    integrationType = arguments["integrationType"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys integrations with pageSize: {PageSize}, pageNumber: {PageNumber}, integrationType: {IntegrationType}", pageSize, pageNumber, integrationType);
+
+                var result = await _genesysClient.GetIntegrationsAsync(integrationType, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("integrations") && resultDict["integrations"] is IEnumerable<object> integrations && integrations.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No integrations found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No integrations found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No integrations data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys integrations");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysPresence(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? sourceId = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("sourceId"))
+                {
+                    sourceId = arguments["sourceId"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys presence definitions with pageSize: {PageSize}, pageNumber: {PageNumber}, sourceId: {SourceId}", pageSize, pageNumber, sourceId);
+
+                var result = await _genesysClient.GetPresenceAsync(sourceId, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("presences") && resultDict["presences"] is IEnumerable<object> presences && presences.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No presence definitions found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No presence definitions found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No presence data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys presence definitions");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysConversations(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? mediaType = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("mediaType"))
+                {
+                    mediaType = arguments["mediaType"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys conversations with pageSize: {PageSize}, pageNumber: {PageNumber}, mediaType: {MediaType}", pageSize, pageNumber, mediaType);
+
+                var result = await _genesysClient.GetConversationsAsync(mediaType, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("conversations") && resultDict["conversations"] is IEnumerable<object> conversations && conversations.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No conversations found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No conversations found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No conversations data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys conversations");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        public async Task<object> ListGenesysAnalytics(Dictionary<string, object> arguments)
+        {
+            var pageSize = 25;
+            var pageNumber = 1;
+            string? interval = null;
+
+            try
+            {
+                if (arguments.ContainsKey("pageSize") && int.TryParse(arguments["pageSize"].ToString(), out var parsedPageSize))
+                {
+                    pageSize = parsedPageSize;
+                }
+
+                if (arguments.ContainsKey("pageNumber") && int.TryParse(arguments["pageNumber"].ToString(), out var parsedPageNumber))
+                {
+                    pageNumber = parsedPageNumber;
+                }
+
+                if (arguments.ContainsKey("interval"))
+                {
+                    interval = arguments["interval"].ToString();
+                }
+
+                _logger.LogInformation("Retrieving Genesys analytics with pageSize: {PageSize}, pageNumber: {PageNumber}, interval: {Interval}", pageSize, pageNumber, interval);
+
+                var result = await _genesysClient.GetAnalyticsAsync(interval, pageSize, pageNumber);
+
+                if (result is { } resultObj)
+                {
+                    var resultDict = resultObj.GetType().GetProperties()
+                        .ToDictionary(prop => prop.Name, prop => prop.GetValue(resultObj));
+
+                    if (resultDict.ContainsKey("analytics") && resultDict["analytics"] is IEnumerable<object> analytics && analytics.Any())
+                    {
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = System.Text.Json.JsonSerializer.Serialize(resultDict, new JsonSerializerOptions { WriteIndented = true })
+                                }
+                            }
+                        };
+                    }
+                    else
+                    {
+                        _logger.LogWarning("No analytics found for the specified criteria");
+                        return new
+                        {
+                            content = new[]
+                            {
+                                new
+                                {
+                                    type = "text",
+                                    text = "No analytics found for the specified criteria."
+                                }
+                            }
+                        };
+                    }
+                }
+
+                return new
+                {
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "text",
+                            text = "No analytics data available."
+                        }
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Genesys analytics");
+                return new
+                {
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        private async Task<object> ListGenesysLocations(Dictionary<string, object> arguments)
+        {
+            // Extrair parâmetros opcionais no início do método para estarem disponíveis em todo o escopo
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+            var name = arguments.GetValueOrDefault("name")?.ToString();
+
+            try
+            {
+                _logger.LogInformation("Listando locations do Genesys Cloud");
+
+                // Buscar locations reais da API do Genesys Cloud
+                var result = await _genesysClient.GetLocationsAsync(name, pageSize, pageNumber);
+
+                if (result == null)
+                {
+                    _logger.LogWarning("Nenhum resultado retornado da API de locations do Genesys Cloud");
+                    return new
+                    {
+                        locations = new List<object>(),
+                        totalCount = 0,
+                        pageSize = pageSize.ToString(),
+                        pageNumber = pageNumber.ToString(),
+                        hasMorePages = false,
+                        timestamp = DateTime.UtcNow,
+                        source = "GenesysCloud_API",
+                        status = "no_data"
+                    };
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao listar locations do Genesys Cloud");
+
+                // Retornar resposta de erro estruturada em vez de lançar exceção
+                return new
+                {
+                    locations = new List<object>(),
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        private async Task<object> ListGenesysRoles(Dictionary<string, object> arguments)
+        {
+            // Extrair parâmetros opcionais no início do método para estarem disponíveis em todo o escopo
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+            var name = arguments.GetValueOrDefault("name")?.ToString();
+
+            try
+            {
+                _logger.LogInformation("Listando roles do Genesys Cloud");
+
+                // Buscar roles reais da API do Genesys Cloud
+                var result = await _genesysClient.GetRolesAsync(name, pageSize, pageNumber);
+
+                if (result == null)
+                {
+                    _logger.LogWarning("Nenhum resultado retornado da API de roles do Genesys Cloud");
+                    return new
+                    {
+                        roles = new List<object>(),
+                        totalCount = 0,
+                        pageSize = pageSize.ToString(),
+                        pageNumber = pageNumber.ToString(),
+                        hasMorePages = false,
+                        timestamp = DateTime.UtcNow,
+                        source = "GenesysCloud_API",
+                        status = "no_data"
+                    };
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao listar roles do Genesys Cloud");
+
+                // Retornar resposta de erro estruturada em vez de lançar exceção
+                return new
+                {
+                    roles = new List<object>(),
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+
+        private async Task<object> ListGenesysGroups(Dictionary<string, object> arguments)
+        {
+            // Extrair parâmetros opcionais no início do método para estarem disponíveis em todo o escopo
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+            var name = arguments.GetValueOrDefault("name")?.ToString();
+
+            try
+            {
+                _logger.LogInformation("Listando grupos do Genesys Cloud");
+
+                // Buscar grupos reais da API do Genesys Cloud
+                var result = await _genesysClient.GetGroupsAsync(name, pageSize, pageNumber);
+
+                if (result == null)
+                {
+                    _logger.LogWarning("Nenhum resultado retornado da API de grupos do Genesys Cloud");
+                    return new
+                    {
+                        groups = new List<object>(),
+                        totalCount = 0,
+                        pageSize = pageSize.ToString(),
+                        pageNumber = pageNumber.ToString(),
+                        hasMorePages = false,
+                        timestamp = DateTime.UtcNow,
+                        source = "GenesysCloud_API",
+                        status = "no_data"
+                    };
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao listar grupos do Genesys Cloud");
+
+                // Retornar resposta de erro estruturada em vez de lançar exceção
+                return new
+                {
+                    groups = new List<object>(),
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        private async Task<object> ListGenesysDivisions(Dictionary<string, object> arguments)
+        {
+            // Extrair parâmetros opcionais no início do método para estarem disponíveis em todo o escopo
+            var pageSize = int.TryParse(arguments.GetValueOrDefault("pageSize")?.ToString(), out var ps) ? ps : 25;
+            var pageNumber = int.TryParse(arguments.GetValueOrDefault("pageNumber")?.ToString(), out var pn) ? pn : 1;
+            var name = arguments.GetValueOrDefault("name")?.ToString();
+
+            try
+            {
+                _logger.LogInformation("Listando divisões do Genesys Cloud");
+
+                // Buscar divisões reais da API do Genesys Cloud
+                var result = await _genesysClient.GetDivisionsAsync(pageSize, pageNumber, name);
+
+                if (result == null)
+                {
+                    _logger.LogWarning("Nenhum resultado retornado da API de divisões do Genesys Cloud");
+                    return new
+                    {
+                        divisions = new List<object>(),
+                        totalCount = 0,
+                        pageSize = pageSize.ToString(),
+                        pageNumber = pageNumber.ToString(),
+                        hasMorePages = false,
+                        timestamp = DateTime.UtcNow,
+                        source = "GenesysCloud_API",
+                        status = "no_data"
+                    };
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao listar divisões do Genesys Cloud");
+
+                // Retornar resposta de erro estruturada em vez de lançar exceção
+                return new
+                {
+                    divisions = new List<object>(),
+                    totalCount = 0,
+                    pageSize = pageSize.ToString(),
+                    pageNumber = pageNumber.ToString(),
+                    hasMorePages = false,
+                    timestamp = DateTime.UtcNow,
+                    source = "GenesysCloud_API",
+                    status = "error",
+                    error = new
+                    {
+                        message = ex.Message,
+                        type = ex.GetType().Name
+                    }
+                };
+            }
+        }
+
+        /// <summary>
+        /// Mapeia o tipo de flow do Genesys para o StreamSource do Dynamics
+        /// </summary>
+        private int GetStreamSourceByFlowType(string? flowType)
        {
            return flowType?.ToLower() switch
            {
