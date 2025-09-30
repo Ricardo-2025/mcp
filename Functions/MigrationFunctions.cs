@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 using GenesysMigrationMCP.Services;
 using GenesysMigrationMCP.Models;
 using Newtonsoft.Json;
+using System.Text;
 using System.Text.Json;
 using System.Net;
-using System.Linq; // para Select/Count
 
 namespace GenesysMigrationMCP.Functions
 {
@@ -33,13 +33,16 @@ namespace GenesysMigrationMCP.Functions
                 if (req.Method == "OPTIONS")
                 {
                     var corsResponse = req.CreateResponse(HttpStatusCode.OK);
-                    AddCors(corsResponse);
+                    corsResponse.Headers.Add("Access-Control-Allow-Origin", "*");
+                    corsResponse.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                    corsResponse.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Mcp-Session-Id, Authorization");
+                    corsResponse.Headers.Add("Access-Control-Max-Age", "86400");
                     return corsResponse;
                 }
 
                 _logger.LogInformation("MCP request received");
 
-                // Extrai/gera Session-Id (normalizado)
+                // Extrai/gera Session-Id
                 string sessionId = GetSessionId(req) ?? await _sessionService.CreateSessionAsync();
                 _logger.LogInformation("Processing request for session: {SessionId}", sessionId);
 
@@ -50,13 +53,13 @@ namespace GenesysMigrationMCP.Functions
                     return await CreateErrorResponse(req, sessionId, -32600, "Invalid Request", "Request body is empty");
                 }
 
-                // Desserializa JSON-RPC (Newtonsoft)
+                // Desserializa JSON-RPC
                 MCPRequest? mcpRequest;
                 try
                 {
                     mcpRequest = JsonConvert.DeserializeObject<MCPRequest>(requestBody);
                 }
-                catch (Newtonsoft.Json.JsonException ex)
+                catch (System.Text.Json.JsonException ex)
                 {
                     _logger.LogError(ex, "Failed to deserialize MCP request");
                     return await CreateErrorResponse(req, sessionId, -32700, "Parse error", "Invalid JSON");
@@ -72,26 +75,31 @@ namespace GenesysMigrationMCP.Functions
                 // Processa o pedido (pode retornar null para notificações)
                 var response = await ProcessMCPRequest(mcpRequest, req, sessionId);
 
-                // 🔹 Notificação: não retorna envelope JSON-RPC → devolve 200 {}
+                // 🔹 Notificação: não retorna envelope JSON-RPC
                 if (response is null)
                 {
-                    var ok = req.CreateResponse(HttpStatusCode.OK);
-                    AddCors(ok);
-                    AddSessionHeaders(ok, sessionId); // envia apenas o header canônico
-                    ok.Headers.Add("Content-Type", "application/json");
-                    await ok.WriteStringAsync("{}");
+                    var noContent = req.CreateResponse(HttpStatusCode.NoContent);
+                    noContent.Headers.Add("Access-Control-Allow-Origin", "*");
+                    noContent.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                    noContent.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Mcp-Session-Id, Authorization");
+                    noContent.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");
+                    noContent.Headers.Add("Mcp-Session-Id", sessionId);
                     await _sessionService.UpdateSessionActivityAsync(sessionId);
-                    return ok;
+                    return noContent;
                 }
 
-                // 🔹 Chamada RPC normal
+                // 🔹 Chamada RPC normal: retorna envelope JSON-RPC
                 var jsonResponse = JsonConvert.SerializeObject(response, Formatting.None);
                 _logger.LogInformation("Serialized response: {Json}", jsonResponse);
 
                 var result = req.CreateResponse(HttpStatusCode.OK);
-                AddCors(result);
-                AddSessionHeaders(result, sessionId); // envia apenas o header canônico
                 result.Headers.Add("Content-Type", "application/json");
+                result.Headers.Add("Access-Control-Allow-Origin", "*");
+                result.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+                result.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Mcp-Session-Id, Authorization");
+                result.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");
+                result.Headers.Add("Mcp-Session-Id", sessionId);
+
                 await result.WriteStringAsync(jsonResponse);
                 await _sessionService.UpdateSessionActivityAsync(sessionId);
 
@@ -105,12 +113,12 @@ namespace GenesysMigrationMCP.Functions
             }
         }
 
-        // Dispatcher
+        // Agora pode retornar null para notificações (sem resposta)
         private async Task<MCPResponse?> ProcessMCPRequest(MCPRequest request, HttpRequestData httpRequest, string sessionId)
         {
             try
             {
-                // 🔹 Notificação JSON-RPC: id ausente
+                // 🔹 Notificação JSON-RPC: id ausente → não responder
                 var isNotification = request.Id == null || (request.Id is string s && string.IsNullOrWhiteSpace(s));
                 if (isNotification)
                 {
@@ -135,38 +143,30 @@ namespace GenesysMigrationMCP.Functions
                 // 🔹 Para chamadas RPC (com id), valide sessão (exceto initialize)
                 if (!string.Equals(request.Method, "initialize", StringComparison.OrdinalIgnoreCase))
                 {
-                    var valid = await _sessionService.ValidateSessionAsync(sessionId);
-                    if (!valid)
+                    if (!await _sessionService.ValidateSessionAsync(sessionId))
                     {
-                        // Tolerância: auto-cria sessão para métodos "leitura" (evita invalid session em clients que chamam fora de ordem)
-                        if (request.Method == "tools/list" || request.Method == "resources/list")
+                        _logger.LogWarning("Invalid or expired session: {SessionId} for method: {Method}", sessionId, request.Method);
+                        return new MCPResponse
                         {
-                            _logger.LogWarning("Sessão inválida para {Method}. Criando nova sessão e seguindo.", request.Method);
-                            sessionId = await _sessionService.CreateSessionAsync();
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Invalid or expired session: {SessionId} for method: {Method}", sessionId, request.Method);
-                            return new MCPResponse
+                            Id = request.Id,
+                            Error = new MCPError
                             {
-                                Id = request.Id,
-                                Error = new MCPError
-                                {
-                                    Code = -32002,
-                                    Message = "Invalid session",
-                                    Data = "Session not found or expired"
-                                }
-                            };
-                        }
+                                Code = -32002,
+                                Message = "Invalid session",
+                                Data = "Session not found or expired"
+                            }
+                        };
                     }
                 }
 
+                // Atualiza timestamp da sessão
                 await _sessionService.UpdateSessionActivityAsync(sessionId);
 
+                // Dispatcher de métodos
                 object? result = request.Method switch
                 {
                     "initialize" => await HandleInitialize(request, sessionId, httpRequest),
-                    "tools/list" => await HandleToolsList(request),        // ⬅️ paginado
+                    "tools/list" => await _mcpService.ListTools(),
                     "tools/call" => await HandleToolCall(request, sessionId),
                     "resources/list" => await _mcpService.ListResources(),
                     "resources/read" => await HandleResourceRead(request, sessionId),
@@ -195,119 +195,21 @@ namespace GenesysMigrationMCP.Functions
             }
         }
 
-        // ---------- Handlers ----------
-
         private async Task<InitializeResult> HandleInitialize(MCPRequest request, string sessionId, HttpRequestData httpRequest)
         {
+            // Se sessionId não existe ainda, cria uma nova sessão
             if (!await _sessionService.ValidateSessionAsync(sessionId))
             {
                 sessionId = await _sessionService.CreateSessionAsync();
             }
+            
             await _sessionService.UpdateSessionActivityAsync(sessionId);
 
             var result = await _mcpService.Initialize();
-            result.SessionId = sessionId;
+            result.SessionId = sessionId; // devolve o sessionId ao cliente
+
             _logger.LogInformation("Session initialized with ID: {SessionId}", sessionId);
             return result;
-        }
-
-        // tools/list paginado: limit <= 200, cursor = base64(offset)
-        private async Task<object> HandleToolsList(MCPRequest request)
-        {
-            int limit = 90;   // default
-            int offset = 0;
-            bool all = false; // ⬅️ novo
-
-            try
-            {
-                if (request.Params != null)
-                {
-                    var raw = request.Params is string s
-                        ? Newtonsoft.Json.Linq.JToken.Parse(s)
-                        : Newtonsoft.Json.Linq.JToken.FromObject(request.Params);
-
-                    if (raw["limit"] != null)
-                        limit = Math.Clamp((int)raw["limit"], 1, 300); // cap maior mas seguro
-
-                    if (raw["cursor"] != null)
-                    {
-                        var c = (string)raw["cursor"];
-                        if (!string.IsNullOrWhiteSpace(c))
-                        {
-                            var bytes = System.Convert.FromBase64String(c);
-                            if (int.TryParse(System.Text.Encoding.UTF8.GetString(bytes), out var o))
-                                offset = Math.Max(0, o);
-                        }
-                    }
-
-                    if (raw["all"] != null) // ⬅️ novo
-                        all = (bool)raw["all"];
-                }
-            }
-            catch
-            {
-                // usa defaults se params inválidos
-            }
-
-            // ⬅️ Modo "all": junta páginas até o cap
-            if (all)
-            {
-                const int hardCap = 300; // evite respostas gigantes
-                var acc = new List<ToolListItem>();
-                int total = 0;
-                int cursor = offset;
-                int pageLimit = Math.Min(limit, hardCap);
-
-                while (acc.Count < hardCap)
-                {
-                    var page = await _mcpService.ListToolsPaged(cursor, pageLimit);
-                    if (page.Items.Count == 0)
-                    {
-                        total = page.Total;
-                        break;
-                    }
-
-                    acc.AddRange(page.Items);
-                    total = page.Total;
-                    cursor += page.Items.Count;
-
-                    if (cursor >= total) break;           // fim
-                    if (acc.Count >= hardCap) break;      // cap
-                }
-
-                _logger.LogInformation("tools/list(all) -> total={Total} returned={Returned} offset={Offset}",
-                    total, acc.Count, offset);
-
-                return new
-                {
-                    tools = acc,
-                    paging = new
-                    {
-                        total,
-                        limit = acc.Count,
-                        cursor = cursor < total
-                            ? Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(cursor.ToString()))
-                            : null
-                    }
-                };
-            }
-
-            // ⬅️ Modo paginado normal
-            var singlePage = await _mcpService.ListToolsPaged(offset, limit);
-
-            string? nextCursor = null;
-            var nextOffset = offset + singlePage.Items.Count;
-            if (singlePage.Total > nextOffset)
-                nextCursor = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(nextOffset.ToString()));
-
-            _logger.LogInformation("tools/list -> total={Total} pageCount={Count} limit={Limit} offset={Offset}",
-                singlePage.Total, singlePage.Items.Count, limit, offset);
-
-            return new
-            {
-                tools = singlePage.Items,
-                paging = new { total = singlePage.Total, limit, cursor = nextCursor }
-            };
         }
 
         private async Task<CallToolResult> HandleToolCall(MCPRequest request, string sessionId)
@@ -320,6 +222,7 @@ namespace GenesysMigrationMCP.Functions
                 toolParams.Name, JsonConvert.SerializeObject(toolParams.Arguments), sessionId);
 
             var result = await _mcpService.CallTool(toolParams.Name, toolParams.Arguments ?? new Dictionary<string, object>());
+
             _logger.LogInformation("Tool call result: {Result}", JsonConvert.SerializeObject(result));
             return result;
         }
@@ -344,8 +247,8 @@ namespace GenesysMigrationMCP.Functions
                 return new { error = "Session not found", sessionId = sessionId };
             }
 
-            return new
-            {
+            return new 
+            { 
                 sessionId = sessionInfo.SessionId,
                 createdAt = sessionInfo.CreatedAt,
                 lastActivity = sessionInfo.LastActivity,
@@ -357,10 +260,10 @@ namespace GenesysMigrationMCP.Functions
         private async Task<object> HandleListSessions()
         {
             var sessions = await _sessionService.GetActiveSessionsAsync();
-            return new
-            {
+            return new 
+            { 
                 activeSessions = sessions.Count(),
-                sessions = sessions.Select(s => new
+                sessions = sessions.Select(s => new 
                 {
                     sessionId = s.SessionId,
                     createdAt = s.CreatedAt,
@@ -370,65 +273,42 @@ namespace GenesysMigrationMCP.Functions
             };
         }
 
-        // ---------- Util ----------
-
-        private static string? NormalizeSessionId(string? raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return null;
-
-            // Se vier "id1,id2,..." (alguns clientes concatenam valores), pega o primeiro
-            var first = raw.Split(',')[0].Trim();
-
-            // Opcional: validar como GUID
-            if (Guid.TryParse(first, out _)) return first;
-
-            // Se não for GUID, devolve o token limpo mesmo assim
-            return first;
-        }
-
         private string? GetSessionId(HttpRequestData request)
         {
-            // tenta variantes do header
-            string[] names = { "Mcp-Session-Id", "mcp-session-id", "X-MCP-Session-Id", "x-mcp-session-id" };
-            foreach (var n in names)
+            if (request.Headers.Contains("Mcp-Session-Id"))
             {
-                if (request.Headers.Contains(n))
-                {
-                    var val = request.Headers.GetValues(n).FirstOrDefault();
-                    var norm = NormalizeSessionId(val);
-                    if (!string.IsNullOrEmpty(norm)) return norm;
-                }
-            }
-
-            // fallback: query string
-            var uri = request.Url;
-            if (!string.IsNullOrEmpty(uri.Query))
-            {
-                var qs = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                var norm = NormalizeSessionId(qs.Get("mcpSessionId") ?? qs.Get("sessionId"));
-                if (!string.IsNullOrEmpty(norm)) return norm;
+                return request.Headers.GetValues("Mcp-Session-Id").FirstOrDefault();
             }
             return null;
         }
 
         private async Task<object> HandleMigrateSkills(MCPRequest request, string sessionId)
         {
-            var parameters = new Dictionary<string, object>();
-            if (request.Params is JsonElement json && json.ValueKind == JsonValueKind.Object)
+            try
             {
-                foreach (var p in json.EnumerateObject())
+                var parameters = new Dictionary<string, object>();
+                if (request.Params is JsonElement json && json.ValueKind == JsonValueKind.Object)
                 {
-                    parameters[p.Name] = p.Value.ValueKind switch
+                    foreach (var p in json.EnumerateObject())
                     {
-                        JsonValueKind.String => p.Value.GetString()!,
-                        JsonValueKind.Number => p.Value.GetDouble(),
-                        JsonValueKind.True => true,
-                        JsonValueKind.False => false,
-                        _ => p.Value.ToString()
-                    };
+                        parameters[p.Name] = p.Value.ValueKind switch
+                        {
+                            JsonValueKind.String => p.Value.GetString()!,
+                            JsonValueKind.Number => p.Value.GetDouble(),
+                            JsonValueKind.True => true,
+                            JsonValueKind.False => false,
+                            _ => p.Value.ToString()
+                        };
+                    }
                 }
+
+                return await _mcpService.MigrateSkills(parameters);
             }
-            return await _mcpService.MigrateSkills(parameters);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling migrate_skills request for session {SessionId}", sessionId);
+                throw;
+            }
         }
 
         private async Task<HttpResponseData> CreateErrorResponse(HttpRequestData req, string? sessionId, int code, string message, object? data = null)
@@ -441,28 +321,17 @@ namespace GenesysMigrationMCP.Functions
 
             var jsonResponse = JsonConvert.SerializeObject(errorResponse, Formatting.None);
             var result = req.CreateResponse(HttpStatusCode.OK);
-            AddCors(result);
-            if (!string.IsNullOrEmpty(sessionId)) AddSessionHeaders(result, sessionId);
             result.Headers.Add("Content-Type", "application/json");
+            result.Headers.Add("Access-Control-Allow-Origin", "*");
+            result.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
+            result.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Mcp-Session-Id, Authorization");
+            result.Headers.Add("Access-Control-Expose-Headers", "Mcp-Session-Id");
+
+            if (!string.IsNullOrEmpty(sessionId))
+                result.Headers.Add("Mcp-Session-Id", sessionId);
+
             await result.WriteStringAsync(jsonResponse);
             return result;
-        }
-
-        // helpers
-        private static void AddCors(HttpResponseData resp)
-        {
-            resp.Headers.Add("Access-Control-Allow-Origin", "*");
-            resp.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS");
-            resp.Headers.Add("Access-Control-Allow-Headers",
-                "Content-Type, Authorization, x-functions-key, Mcp-Session-Id, mcp-session-id, X-MCP-Session-Id");
-            resp.Headers.Add("Access-Control-Expose-Headers",
-                "Mcp-Session-Id, mcp-session-id, X-MCP-Session-Id");
-        }
-
-        private static void AddSessionHeaders(HttpResponseData resp, string sessionId)
-        {
-            // ✅ Envie apenas o header canônico para evitar concatenção "id,id" no client
-            resp.Headers.Add("Mcp-Session-Id", sessionId);
         }
     }
 }

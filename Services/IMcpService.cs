@@ -9,9 +9,6 @@ namespace GenesysMigrationMCP.Services
         /// </summary>
         Task<InitializeResult> Initialize();
 
-        Task<ToolListPage> ListToolsPaged(int offset, int limit);
-
-       // Task<object> ListTools();
         /// <summary>
         /// Lista todas as tools disponíveis
         /// </summary>
@@ -36,8 +33,5 @@ namespace GenesysMigrationMCP.Services
         /// Migra skills do Genesys para o Dynamics
         /// </summary>
         Task<object> MigrateSkills(Dictionary<string, object> arguments);
-
-    
-
     }
 }
