@@ -13,13 +13,15 @@ namespace GenesysMigrationMCP.Services
         private readonly GenesysCloudClient _genesysClient;
         private readonly DynamicsClient _dynamicsClient;
         private readonly IMigrationOrchestrator _migrationOrchestrator;
+        private readonly IMappingAnalysisService _mappingAnalysisService;
 
-        public McpService(ILogger<McpService> logger, GenesysCloudClient genesysClient, DynamicsClient dynamicsClient, IMigrationOrchestrator migrationOrchestrator)
+        public McpService(ILogger<McpService> logger, GenesysCloudClient genesysClient, DynamicsClient dynamicsClient, IMigrationOrchestrator migrationOrchestrator, IMappingAnalysisService mappingAnalysisService)
         {
             _logger = logger;
             _genesysClient = genesysClient;
             _dynamicsClient = dynamicsClient;
             _migrationOrchestrator = migrationOrchestrator;
+            _mappingAnalysisService = mappingAnalysisService;
             
             _logger.LogInformation("GenesysCloudClient, DynamicsClient e MigrationOrchestrator inicializados");
             
@@ -136,6 +138,19 @@ namespace GenesysMigrationMCP.Services
                     "get_dynamics_inventory" => await GetDynamicsInventory(arguments),
                     "compare_inventories" => await CompareInventories(arguments),
                     "export_inventory_report" => await ExportInventoryReport(arguments),
+                    
+                    // Ferramentas de Análise de Mapeamento Genesys-Dynamics
+                    "generate_mapping_analysis_report" => await GenerateMappingAnalysisReport(arguments),
+                    "get_mapping_summary" => await GetMappingSummary(arguments),
+                    "analyze_entity_type_mapping" => await AnalyzeEntityTypeMapping(arguments),
+                    "compare_entities" => await CompareEntities(arguments),
+                    "assess_migration_risk" => await AssessMigrationRisk(arguments),
+                    "analyze_data_quality" => await AnalyzeDataQuality(arguments),
+                    "generate_migration_plan" => await GenerateMigrationPlan(arguments),
+                    "get_migration_recommendations" => await GetMigrationRecommendations(arguments),
+                    "validate_entity_migration" => await ValidateEntityMigration(arguments),
+                    "analyze_entity_dependencies" => await AnalyzeEntityDependencies(arguments),
+                    
                     _ => throw new ArgumentException($"Unknown tool: {name}")
                 };
 
@@ -1291,6 +1306,180 @@ namespace GenesysMigrationMCP.Services
                         },
                         Required = new[] { "reportType" }
                     }
+                },
+
+                // Mapping Analysis Tools
+                new Tool
+                {
+                    Name = "generate_mapping_analysis_report",
+                    Description = "Gera relatório completo de análise de mapeamento entre Genesys Cloud e Dynamics 365",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["includeRiskAssessment"] = new { type = "boolean", description = "Incluir avaliação de riscos", @default = true },
+                            ["includeDataQuality"] = new { type = "boolean", description = "Incluir análise de qualidade de dados", @default = true },
+                            ["includeMigrationPlan"] = new { type = "boolean", description = "Incluir plano de migração", @default = true },
+                            ["format"] = new { type = "string", @enum = new[] { "json", "excel", "pdf" }, description = "Formato do relatório", @default = "json" }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "get_mapping_summary",
+                    Description = "Obtém resumo executivo do mapeamento entre Genesys e Dynamics",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "analyze_entity_type_mapping",
+                    Description = "Analisa mapeamento de um tipo específico de entidade",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["entityType"] = new { type = "string", @enum = new[] { "users", "queues", "flows", "bots", "skills", "roles", "workstreams", "channels" }, description = "Tipo de entidade para análise" },
+                            ["includeFieldMapping"] = new { type = "boolean", description = "Incluir mapeamento detalhado de campos", @default = true }
+                        },
+                        Required = new[] { "organizationId", "entityType" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "compare_entities",
+                    Description = "Compara entidades específicas entre Genesys e Dynamics",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["genesysEntityId"] = new { type = "string", description = "ID da entidade no Genesys" },
+                            ["genesysEntityType"] = new { type = "string", description = "Tipo da entidade no Genesys" },
+                            ["dynamicsEntityId"] = new { type = "string", description = "ID da entidade no Dynamics (opcional)" },
+                            ["includeRecommendations"] = new { type = "boolean", description = "Incluir recomendações de migração", @default = true }
+                        },
+                        Required = new[] { "genesysEntityId", "genesysEntityType" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "assess_migration_risk",
+                    Description = "Avalia riscos de migração para entidades específicas ou geral",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["entityType"] = new { type = "string", @enum = new[] { "all", "users", "queues", "flows", "bots", "skills", "roles", "workstreams", "channels" }, description = "Tipo de entidade para avaliação", @default = "all" },
+                            ["includeContingencyPlans"] = new { type = "boolean", description = "Incluir planos de contingência", @default = true }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "analyze_data_quality",
+                    Description = "Analisa qualidade dos dados para migração",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["entityType"] = new { type = "string", @enum = new[] { "all", "users", "queues", "flows", "bots", "skills", "roles" }, description = "Tipo de entidade para análise", @default = "all" },
+                            ["includeRecommendations"] = new { type = "boolean", description = "Incluir recomendações de limpeza", @default = true }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "generate_migration_plan",
+                    Description = "Gera plano detalhado de migração",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["strategy"] = new { type = "string", @enum = new[] { "phased", "big_bang", "parallel" }, description = "Estratégia de migração", @default = "phased" },
+                            ["includeTimeline"] = new { type = "boolean", description = "Incluir cronograma detalhado", @default = true },
+                            ["includeResources"] = new { type = "boolean", description = "Incluir requisitos de recursos", @default = true }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "get_migration_recommendations",
+                    Description = "Obtém recomendações específicas para migração",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["entityType"] = new { type = "string", @enum = new[] { "all", "users", "queues", "flows", "bots", "skills", "roles", "workstreams", "channels" }, description = "Tipo de entidade", @default = "all" },
+                            ["priority"] = new { type = "string", @enum = new[] { "all", "high", "medium", "low" }, description = "Prioridade das recomendações", @default = "all" }
+                        },
+                        Required = new[] { "organizationId" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "validate_entity_migration",
+                    Description = "Valida se uma entidade específica pode ser migrada",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["genesysEntityId"] = new { type = "string", description = "ID da entidade no Genesys" },
+                            ["genesysEntityType"] = new { type = "string", description = "Tipo da entidade no Genesys" },
+                            ["includeBlockers"] = new { type = "boolean", description = "Incluir impedimentos detalhados", @default = true }
+                        },
+                        Required = new[] { "genesysEntityId", "genesysEntityType" }
+                    }
+                },
+
+                new Tool
+                {
+                    Name = "analyze_entity_dependencies",
+                    Description = "Analisa dependências entre entidades para migração",
+                    InputSchema = new ToolInputSchema
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, object>
+                        {
+                            ["organizationId"] = new { type = "string", description = "ID da organização no Genesys Cloud" },
+                            ["entityId"] = new { type = "string", description = "ID da entidade específica (opcional)" },
+                            ["entityType"] = new { type = "string", description = "Tipo da entidade" },
+                            ["includeImpactAnalysis"] = new { type = "boolean", description = "Incluir análise de impacto", @default = true }
+                        },
+                        Required = new[] { "organizationId", "entityType" }
+                    }
                 }
             };
         }
@@ -2098,7 +2287,7 @@ namespace GenesysMigrationMCP.Services
                             return new DynamicsSkill
                             {
                                 Name = skillDict?.GetValueOrDefault("name")?.ToString() ?? "",
-                                Proficiency = int.TryParse(skillDict?.GetValueOrDefault("proficiency")?.ToString(), out var prof) ? prof : 0
+                                ProficiencyValue = int.TryParse(skillDict?.GetValueOrDefault("proficiency")?.ToString(), out var prof) ? prof : 0
                             };
                         }).ToList() ?? new List<DynamicsSkill>();
                     }
@@ -6776,5 +6965,431 @@ namespace GenesysMigrationMCP.Services
                _ => 192360000            // Default: Voice
            };
        }
+
+        #region Ferramentas de Análise de Mapeamento Genesys-Dynamics
+
+        /// <summary>
+        /// Gera relatório completo de análise de mapeamento entre Genesys e Dynamics
+        /// </summary>
+        private async Task<object> GenerateMappingAnalysisReport(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Gerando relatório completo de análise de mapeamento");
+
+                var includeDetailedAnalysis = arguments.ContainsKey("includeDetailedAnalysis") ? (bool)arguments["includeDetailedAnalysis"] : true;
+                var format = arguments.ContainsKey("format") ? arguments["format"].ToString() : "json";
+                
+                // Extrair tipos de entidade se fornecidos
+                List<string>? entityTypes = null;
+                if (arguments.ContainsKey("entityTypes") && arguments["entityTypes"] is IEnumerable<object> entityTypesObj)
+                {
+                    entityTypes = entityTypesObj.Select(x => x.ToString()).Where(x => !string.IsNullOrEmpty(x)).ToList()!;
+                }
+
+                _logger.LogInformation($"Parâmetros: includeDetailedAnalysis={includeDetailedAnalysis}, entityTypes={string.Join(",", entityTypes ?? new List<string>())}");
+
+                var report = await _mappingAnalysisService.GenerateCompleteMappingReportAsync(includeDetailedAnalysis, entityTypes);
+
+                _logger.LogInformation($"Relatório gerado com sucesso. ID: {report.ReportId}, Total Genesys: {report.Summary.TotalGenesysEntities}, Total Dynamics: {report.Summary.TotalDynamicsEntities}");
+
+                return new
+                {
+                    report = report,
+                    format = format,
+                    generatedAt = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao gerar relatório de análise de mapeamento");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Obtém resumo do mapeamento entre Genesys e Dynamics
+        /// </summary>
+        private async Task<object> GetMappingSummary(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Obtendo resumo do mapeamento");
+
+                var summary = await _mappingAnalysisService.GetMappingSummaryAsync();
+
+                return new
+                {
+                    summary = summary,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter resumo do mapeamento");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Analisa mapeamento de tipos específicos de entidade
+        /// </summary>
+        private async Task<object> AnalyzeEntityTypeMapping(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Analisando mapeamento de tipos de entidade");
+
+                var entityType = arguments.ContainsKey("entityType") ? arguments["entityType"].ToString() : "all";
+                var includeDetails = arguments.ContainsKey("includeDetails") && (bool)arguments["includeDetails"];
+
+                var analysis = await _mappingAnalysisService.AnalyzeEntityTypeMappingAsync(entityType);
+
+                return new
+                {
+                    entityType = entityType,
+                    analysis = analysis,
+                    includeDetails = includeDetails,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao analisar mapeamento de tipos de entidade");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Compara entidades específicas entre Genesys e Dynamics
+        /// </summary>
+        private async Task<object> CompareEntities(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Comparando entidades entre Genesys e Dynamics");
+
+                var genesysEntityId = arguments.ContainsKey("genesysEntityId") ? arguments["genesysEntityId"].ToString() : "";
+                var dynamicsEntityId = arguments.ContainsKey("dynamicsEntityId") ? arguments["dynamicsEntityId"].ToString() : "";
+                var entityType = arguments.ContainsKey("entityType") ? arguments["entityType"].ToString() : "";
+
+                var comparison = await _mappingAnalysisService.CompareEntitiesAsync(genesysEntityId, dynamicsEntityId, entityType);
+
+                return new
+                {
+                    genesysEntityId = genesysEntityId,
+                    dynamicsEntityId = dynamicsEntityId,
+                    entityType = entityType,
+                    comparison = comparison,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao comparar entidades");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Avalia riscos de migração
+        /// </summary>
+        private async Task<object> AssessMigrationRisk(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Avaliando riscos de migração");
+
+                var entityType = arguments.ContainsKey("entityType") ? arguments["entityType"].ToString() : "all";
+                var includeRecommendations = arguments.ContainsKey("includeRecommendations") && (bool)arguments["includeRecommendations"];
+
+                List<string>? entityTypes = null;
+                if (entityType != "all")
+                {
+                    entityTypes = new List<string> { entityType };
+                }
+
+                var riskAssessment = await _mappingAnalysisService.AssessMigrationRisksAsync(entityTypes);
+
+                return new
+                {
+                    entityType = entityType,
+                    riskAssessment = riskAssessment,
+                    includeRecommendations = includeRecommendations,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao avaliar riscos de migração");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Analisa qualidade dos dados para migração
+        /// </summary>
+        private async Task<object> AnalyzeDataQuality(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Analisando qualidade dos dados");
+
+                var entityType = arguments.ContainsKey("entityType") ? arguments["entityType"].ToString() : "all";
+                var includeRecommendations = arguments.ContainsKey("includeRecommendations") && (bool)arguments["includeRecommendations"];
+
+                List<string>? entityTypes = null;
+                if (entityType != "all")
+                {
+                    entityTypes = new List<string> { entityType };
+                }
+
+                var qualityAnalysis = await _mappingAnalysisService.AnalyzeDataQualityAsync(entityTypes);
+
+                return new
+                {
+                    entityType = entityType,
+                    qualityAnalysis = qualityAnalysis,
+                    includeRecommendations = includeRecommendations,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao analisar qualidade dos dados");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Gera plano de migração detalhado
+        /// </summary>
+        private async Task<object> GenerateMigrationPlan(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Gerando plano de migração");
+
+                var entityTypes = arguments.ContainsKey("entityTypes") ? 
+                    ((System.Text.Json.JsonElement)arguments["entityTypes"]).EnumerateArray().Select(x => x.GetString()).ToList() : 
+                    new List<string>();
+                var includeTimeline = arguments.ContainsKey("includeTimeline") && (bool)arguments["includeTimeline"];
+                var includeResources = arguments.ContainsKey("includeResources") && (bool)arguments["includeResources"];
+
+                var migrationPlan = await _mappingAnalysisService.GenerateMigrationPlanAsync("phased", entityTypes);
+
+                return new
+                {
+                    entityTypes = entityTypes,
+                    migrationPlan = migrationPlan,
+                    includeTimeline = includeTimeline,
+                    includeResources = includeResources,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao gerar plano de migração");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Obtém recomendações de migração
+        /// </summary>
+        private async Task<object> GetMigrationRecommendations(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Obtendo recomendações de migração");
+
+                var category = arguments.ContainsKey("category") ? arguments["category"].ToString() : null;
+                var priority = arguments.ContainsKey("priority") ? arguments["priority"].ToString() : null;
+                var entityType = arguments.ContainsKey("entityType") ? arguments["entityType"].ToString() : null;
+
+                // Se category for "all", passar null para obter todas as categorias
+                if (category == "all") category = null;
+                
+                _logger.LogInformation($"Parâmetros: category={category}, priority={priority}, entityType={entityType}");
+
+                var recommendations = await _mappingAnalysisService.GetMigrationRecommendationsAsync(category, entityType);
+
+                // Filtrar por prioridade se especificado
+                if (!string.IsNullOrEmpty(priority) && priority != "all")
+                {
+                    recommendations = recommendations.Where(r => 
+                        string.Equals(r.Priority, priority, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
+                _logger.LogInformation($"Retornando {recommendations.Count} recomendações");
+
+                return new
+                {
+                    category = arguments.ContainsKey("category") ? arguments["category"].ToString() : "all",
+                    priority = arguments.ContainsKey("priority") ? arguments["priority"].ToString() : "all",
+                    recommendations = recommendations,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao obter recomendações de migração");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Valida migração de entidade específica
+        /// </summary>
+        private async Task<object> ValidateEntityMigration(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Validando migração de entidade");
+
+                var entityId = arguments.ContainsKey("entityId") ? arguments["entityId"].ToString() : "";
+                var entityType = arguments.ContainsKey("entityType") ? arguments["entityType"].ToString() : "";
+                var includeDetails = arguments.ContainsKey("includeDetails") && (bool)arguments["includeDetails"];
+
+                var validation = await _mappingAnalysisService.ValidateEntityMigrationAsync(entityId, entityType);
+
+                return new
+                {
+                    entityId = entityId,
+                    entityType = entityType,
+                    validation = validation,
+                    includeDetails = includeDetails,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao validar migração de entidade");
+                return new
+                {
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        /// <summary>
+        /// Analisa dependências entre entidades
+        /// </summary>
+        private async Task<object> AnalyzeEntityDependencies(Dictionary<string, object> arguments)
+        {
+            try
+            {
+                _logger.LogInformation("Analisando dependências entre entidades");
+
+                // Extrair argumentos com validação mais robusta
+                var entityId = arguments.ContainsKey("entityId") && arguments["entityId"] != null 
+                    ? arguments["entityId"].ToString() 
+                    : "";
+                
+                var entityType = arguments.ContainsKey("entityType") && arguments["entityType"] != null 
+                    ? arguments["entityType"].ToString() 
+                    : "";
+                
+                var includeImpactAnalysis = arguments.ContainsKey("includeImpactAnalysis") 
+                    ? Convert.ToBoolean(arguments["includeImpactAnalysis"]) 
+                    : false;
+
+                _logger.LogInformation($"Processando: entityId={entityId}, entityType={entityType}, includeImpactAnalysis={includeImpactAnalysis}");
+
+                // Validar se entityType foi fornecido
+                if (string.IsNullOrWhiteSpace(entityType))
+                {
+                    return new
+                    {
+                        entityId = entityId,
+                        entityType = entityType,
+                        dependencies = new Dictionary<string, List<string>>(),
+                        includeImpactAnalysis = includeImpactAnalysis,
+                        timestamp = DateTime.UtcNow,
+                        status = "error",
+                        error = "entityType é obrigatório"
+                    };
+                }
+
+                var dependencies = await _mappingAnalysisService.AnalyzeEntityDependenciesAsync(entityType);
+
+                return new
+                {
+                    entityId = entityId,
+                    entityType = entityType,
+                    dependencies = dependencies,
+                    includeImpactAnalysis = includeImpactAnalysis,
+                    timestamp = DateTime.UtcNow,
+                    status = "success"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao analisar dependências entre entidades");
+                return new
+                {
+                    entityId = "",
+                    entityType = "",
+                    dependencies = new Dictionary<string, List<string>>(),
+                    includeImpactAnalysis = false,
+                    error = ex.Message,
+                    status = "error",
+                    timestamp = DateTime.UtcNow
+                };
+            }
+        }
+
+        #endregion
    }
 }

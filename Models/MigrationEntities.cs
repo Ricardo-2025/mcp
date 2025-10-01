@@ -42,6 +42,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("dateModified")]
         public DateTime? DateModified { get; set; }
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
     
     public class GenesysRole
@@ -69,6 +81,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("type")]
         public string Type { get; set; } = "ACD";
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
     
     public class GenesysQueue
@@ -96,6 +120,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("dateCreated")]
         public DateTime DateCreated { get; set; }
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
     
     public class GenesysRoutingRule
@@ -142,6 +178,18 @@ namespace GenesysMigrationMCP.Models
         [JsonProperty("dateCreated")]
         public DateTime DateCreated { get; set; }
         
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
+        
         [JsonProperty("dateModified")]
         public DateTime? DateModified { get; set; }
         
@@ -174,6 +222,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("dateCreated")]
         public DateTime DateCreated { get; set; }
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
     
     public class GenesysIntent
@@ -248,6 +308,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("migrationDate")]
         public DateTime? MigrationDate { get; set; }
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
     
     public class DynamicsCapacity
@@ -281,6 +353,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("proficiencyValue")]
         public decimal ProficiencyValue { get; set; }
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
     
     public class DynamicsCharacteristic
@@ -299,6 +383,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("genesysSkillId")]
         public string? GenesysSkillId { get; set; } // Para rastreamento de migração
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
     
     public class DynamicsWorkstream
@@ -329,6 +425,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("dateCreated")]
         public DateTime DateCreated { get; set; }
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
         
         [JsonProperty("genesysQueueId")]
         public string? GenesysQueueId { get; set; } // Para rastreamento de migração
@@ -443,6 +551,18 @@ namespace GenesysMigrationMCP.Models
         
         [JsonProperty("dateCreated")]
         public DateTime DateCreated { get; set; }
+        
+        [JsonProperty("isSimulated")]
+        public bool IsSimulated { get; set; } = false;
+        
+        [JsonProperty("dataSource")]
+        public string? DataSource { get; set; }
+        
+        [JsonProperty("reason")]
+        public string? Reason { get; set; }
+        
+        [JsonProperty("errorMessage")]
+        public string? ErrorMessage { get; set; }
         
         [JsonProperty("genesysBotId")]
         public string? GenesysBotId { get; set; } // Para rastreamento de migração

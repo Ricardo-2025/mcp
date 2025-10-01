@@ -32,7 +32,10 @@ namespace GenesysMigrationMCP.Middleware
             {
                 "/mcp/info",
                 "/mcp/capabilities",
-                "/mcp/endpoints"
+                "/mcp/endpoints",
+                "/api/mapping/health",
+                "/api/mapping/summary",
+                "/api/mapping/generate-report"
             };
         }
 
