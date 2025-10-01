@@ -344,13 +344,23 @@ namespace GenesysMigrationMCP.Services
         {
             try
             {
-                _logger.LogInformation("Obtendo usuários do Genesys Cloud...");
+                _logger.LogInformation("=== GENESYS CLIENT: Iniciando GetUsersAsync ===");
+                _logger.LogInformation($"ClientId configurado: {(!string.IsNullOrEmpty(_clientId) ? "SIM" : "NÃO")}");
+                _logger.LogInformation($"BaseUrl: {_baseUrl}");
+                
+                _logger.LogInformation("Fazendo chamada para API...");
                 var response = await MakeApiCallAsync("api/v2/users?pageSize=100");
+                
+                _logger.LogInformation($"Resposta recebida: {response?.Length ?? 0} caracteres");
+                
                 var usersData = JsonDocument.Parse(response);
+                
+                _logger.LogInformation($"JSON parseado com sucesso. Root ValueKind: {usersData.RootElement.ValueKind}");
                 
                 var users = new List<object>();
                 if (usersData.RootElement.TryGetProperty("entities", out var entitiesElement))
                 {
+                    _logger.LogInformation($"Propriedade 'entities' encontrada com {entitiesElement.GetArrayLength()} usuários");
                     foreach (var user in entitiesElement.EnumerateArray())
                     {
                         users.Add(new Dictionary<string, object?>
@@ -363,8 +373,12 @@ namespace GenesysMigrationMCP.Services
                         });
                     }
                 }
+                else
+                {
+                    _logger.LogWarning($"Propriedade 'entities' NÃO encontrada. Propriedades disponíveis: {string.Join(", ", usersData.RootElement.EnumerateObject().Select(p => p.Name))}");
+                }
 
-                return new Dictionary<string, object>
+                var result = new Dictionary<string, object>
                 {
                     ["organizationId"] = organizationId,
                     ["state"] = state,
@@ -372,10 +386,14 @@ namespace GenesysMigrationMCP.Services
                     ["totalCount"] = users.Count,
                     ["timestamp"] = DateTime.UtcNow
                 };
+                
+                _logger.LogInformation($"=== GENESYS CLIENT: Retornando {users.Count} usuários ===");
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao obter usuários do Genesys Cloud");
+                _logger.LogError(ex, "=== GENESYS CLIENT: ERRO em GetUsersAsync ===");
+                _logger.LogError($"Tipo: {ex.GetType().Name}, Mensagem: {ex.Message}");
                 throw;
             }
         }

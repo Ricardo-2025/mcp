@@ -1,0 +1,350 @@
+﻿{
+  "reportId": "9bcb1f74-c7cc-460e-9540-ed9cef04c418",
+  "generatedDate": "2025-10-01T19:59:09.8743148Z",
+  "genesysEnvironment": "https://api.usw2.pure.cloud",
+  "dynamicsEnvironment": "Unknown",
+  "summary": {
+    "totalGenesysEntities": 9,
+    "totalDynamicsEntities": 7,
+    "mappableEntities": 1,
+    "unmappableEntities": 6,
+    "partialMappingEntities": 0,
+    "migrationComplexity": "High",
+    "estimatedMigrationTime": "1.00:00:00",
+    "confidenceScore": 11.1,
+    "entityTypeCounts": {
+      "Users": {
+        "genesysCount": 3,
+        "dynamicsCount": 2,
+        "mappedCount": 1,
+        "unmappedCount": 2
+      },
+      "Queues": {
+        "genesysCount": 2,
+        "dynamicsCount": 2,
+        "mappedCount": 0,
+        "unmappedCount": 2
+      },
+      "Flows": {
+        "genesysCount": 2,
+        "dynamicsCount": 0,
+        "mappedCount": 0,
+        "unmappedCount": 2
+      },
+      "Bots": {
+        "genesysCount": 1,
+        "dynamicsCount": 1,
+        "mappedCount": 0,
+        "unmappedCount": 1
+      },
+      "Skills": {
+        "genesysCount": 1,
+        "dynamicsCount": 2,
+        "mappedCount": 0,
+        "unmappedCount": 1
+      }
+    }
+  },
+  "entityMappings": [
+    {
+      "entityType": "User",
+      "genesysEntityType": "User",
+      "dynamicsEntityType": "User",
+      "mappingStatus": "Unsupported",
+      "entities": [],
+      "fieldMappings": [],
+      "migrationNotes": null,
+      "complexityScore": 1,
+      "migrationPriority": "Low"
+    },
+    {
+      "entityType": "Queue",
+      "genesysEntityType": "Queue",
+      "dynamicsEntityType": "Queue",
+      "mappingStatus": "Unsupported",
+      "entities": [],
+      "fieldMappings": [],
+      "migrationNotes": null,
+      "complexityScore": 1,
+      "migrationPriority": "Low"
+    },
+    {
+      "entityType": "Skill",
+      "genesysEntityType": "Skill",
+      "dynamicsEntityType": "Skill",
+      "mappingStatus": "Unsupported",
+      "entities": [],
+      "fieldMappings": [],
+      "migrationNotes": null,
+      "complexityScore": 1,
+      "migrationPriority": "Low"
+    }
+  ],
+  "migrationRecommendations": [
+    {
+      "category": "Strategy",
+      "title": "Adotar Migração em Fases",
+      "description": "Implementar migração gradual para reduzir riscos",
+      "priority": "High",
+      "impact": "Reduz risco de interrupção operacional",
+      "effort": "Medium",
+      "timeline": "6-8 semanas",
+      "dependencies": [],
+      "alternatives": []
+    },
+    {
+      "category": "Technical",
+      "title": "Implementar Ambiente de Teste",
+      "description": "Criar ambiente espelho para testes antes da migração",
+      "priority": "High",
+      "impact": "Permite validação completa antes da produção",
+      "effort": "High",
+      "timeline": "2-3 semanas",
+      "dependencies": [],
+      "alternatives": []
+    },
+    {
+      "category": "Process",
+      "title": "Estabelecer Plano de Comunicação",
+      "description": "Definir comunicação clara com todos os stakeholders",
+      "priority": "Medium",
+      "impact": "Reduz resistência à mudança",
+      "effort": "Low",
+      "timeline": "1 semana",
+      "dependencies": [],
+      "alternatives": []
+    },
+    {
+      "category": "Risk",
+      "title": "Manter Ambiente Genesys Ativo",
+      "description": "Manter Genesys operacional por 30 dias após migração",
+      "priority": "High",
+      "impact": "Permite rollback rápido se necessário",
+      "effort": "Low",
+      "timeline": "30 dias pós-migração",
+      "dependencies": [],
+      "alternatives": []
+    }
+  ],
+  "riskAssessment": {
+    "overallRiskLevel": "High",
+    "riskFactors": [
+      {
+        "category": "Technical",
+        "description": "Incompatibilidade de funcionalidades entre Genesys e Dynamics",
+        "probability": "High",
+        "impact": "High",
+        "riskScore": 80.0,
+        "affectedEntities": [
+          "Flows",
+          "Bots",
+          "Advanced Routing"
+        ]
+      },
+      {
+        "category": "Data",
+        "description": "Perda de dados históricos durante migração",
+        "probability": "Medium",
+        "impact": "High",
+        "riskScore": 60.0,
+        "affectedEntities": [
+          "Interactions",
+          "Analytics",
+          "Reports"
+        ]
+      },
+      {
+        "category": "Process",
+        "description": "Interrupção das operações durante migração",
+        "probability": "Medium",
+        "impact": "High",
+        "riskScore": 65.0,
+        "affectedEntities": [
+          "All"
+        ]
+      },
+      {
+        "category": "Business",
+        "description": "Resistência dos usuários à mudança de plataforma",
+        "probability": "High",
+        "impact": "Medium",
+        "riskScore": 70.0,
+        "affectedEntities": [
+          "Users",
+          "Agents"
+        ]
+      }
+    ],
+    "mitigationStrategies": [
+      {
+        "riskCategory": "Technical",
+        "strategy": "Implementar migração em fases com testes extensivos",
+        "implementation": "Criar ambiente de teste paralelo",
+        "effectiveness": "High",
+        "cost": "Medium",
+        "timeline": "2-3 semanas"
+      }
+    ],
+    "contingencyPlans": [
+      {
+        "scenario": "Falha crítica durante migração",
+        "trigger": "Sistema indisponível por mais de 2 horas",
+        "actions": [
+          "Ativar rollback",
+          "Comunicar stakeholders",
+          "Investigar causa raiz"
+        ],
+        "rollbackPlan": "Restaurar ambiente Genesys original",
+        "communicationPlan": "Notificar todos os usuários via email e portal"
+      }
+    ],
+    "riskScore": 68.75
+  },
+  "dataQualityAnalysis": {
+    "overallQualityScore": 0.0,
+    "completenessScore": 0.0,
+    "consistencyScore": 0.0,
+    "accuracyScore": 0.0,
+    "dataIssues": [],
+    "cleanupRecommendations": [
+      "Dados estão em boa qualidade - prosseguir com a migração"
+    ],
+    "dataVolume": {
+      "totalRecords": 0,
+      "recordsByType": {},
+      "estimatedMigrationTime": "00:30:00",
+      "recommendedBatchSize": 10,
+      "storageRequirements": "~0KB para dados de configuração"
+    }
+  },
+  "migrationPlan": {
+    "phases": [
+      {
+        "phaseNumber": 1,
+        "name": "Preparação e Configuração Base",
+        "description": "Configurar ambiente Dynamics e migrar dados mestres",
+        "entityTypes": [
+          "Skills",
+          "Roles"
+        ],
+        "estimatedDuration": "7.00:00:00",
+        "prerequisites": [
+          "Ambiente Dynamics provisionado",
+          "Licenças configuradas"
+        ],
+        "deliverables": [],
+        "riskLevel": "Low"
+      },
+      {
+        "phaseNumber": 2,
+        "name": "Migração de Usuários",
+        "description": "Migrar usuários e configurar permissões",
+        "entityTypes": [
+          "Users"
+        ],
+        "estimatedDuration": "10.00:00:00",
+        "prerequisites": [
+          "Fase 1 completa",
+          "Validação de dados"
+        ],
+        "deliverables": [],
+        "riskLevel": "Medium"
+      },
+      {
+        "phaseNumber": 3,
+        "name": "Configuração de Workstreams",
+        "description": "Criar workstreams baseados nas filas do Genesys",
+        "entityTypes": [
+          "Queues",
+          "Workstreams"
+        ],
+        "estimatedDuration": "14.00:00:00",
+        "prerequisites": [
+          "Fase 2 completa",
+          "Usuários validados"
+        ],
+        "deliverables": [],
+        "riskLevel": "Medium"
+      },
+      {
+        "phaseNumber": 4,
+        "name": "Migração de Flows e Bots",
+        "description": "Recriar flows e configurar bots",
+        "entityTypes": [
+          "Flows",
+          "Bots"
+        ],
+        "estimatedDuration": "21.00:00:00",
+        "prerequisites": [
+          "Fase 3 completa",
+          "Power Automate configurado"
+        ],
+        "deliverables": [],
+        "riskLevel": "High"
+      }
+    ],
+    "totalEstimatedDuration": "52.00:00:00",
+    "resourceRequirements": {
+      "technicalTeam": 4,
+      "businessAnalysts": 2,
+      "projectManagers": 1,
+      "testingTeam": 2,
+      "infrastructureRequirements": [
+        "Dynamics 365 Customer Service licenses",
+        "Power Platform licenses",
+        "Azure integration services",
+        "Development/Test environments"
+      ],
+      "toolsRequired": [
+        "Data migration tools",
+        "Testing frameworks",
+        "Monitoring solutions",
+        "Backup systems"
+      ]
+    },
+    "milestones": [
+      {
+        "name": "Conclusão da Preparação e Configuração Base",
+        "description": "Fase 1 completada com sucesso",
+        "targetDate": "2025-10-08T19:59:13.6550458Z",
+        "dependencies": [],
+        "successCriteria": [
+          "Todos os testes passaram",
+          "Validação do usuário completa"
+        ]
+      },
+      {
+        "name": "Conclusão da Migração de Usuários",
+        "description": "Fase 2 completada com sucesso",
+        "targetDate": "2025-10-18T19:59:13.6550458Z",
+        "dependencies": [],
+        "successCriteria": [
+          "Todos os testes passaram",
+          "Validação do usuário completa"
+        ]
+      },
+      {
+        "name": "Conclusão da Configuração de Workstreams",
+        "description": "Fase 3 completada com sucesso",
+        "targetDate": "2025-11-01T19:59:13.6550458Z",
+        "dependencies": [],
+        "successCriteria": [
+          "Todos os testes passaram",
+          "Validação do usuário completa"
+        ]
+      },
+      {
+        "name": "Conclusão da Migração de Flows e Bots",
+        "description": "Fase 4 completada com sucesso",
+        "targetDate": "2025-11-22T19:59:13.6550458Z",
+        "dependencies": [],
+        "successCriteria": [
+          "Todos os testes passaram",
+          "Validação do usuário completa"
+        ]
+      }
+    ],
+    "rollbackStrategy": "Maintain parallel Genesys environment for 30 days post-migration",
+    "testingStrategy": "Comprehensive UAT with pilot user groups before full rollout"
+  }
+}

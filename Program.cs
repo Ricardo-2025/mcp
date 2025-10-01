@@ -117,6 +117,7 @@ var host = new HostBuilder()
         // Serviços MCP
         services.AddScoped<IMcpService, McpService>();
         services.AddScoped<IMigrationOrchestrator, MigrationOrchestrator>();
+        services.AddScoped<IMappingAnalysisService, MappingAnalysisService>();
 
         // Configuração MCP
         services.Configure<McpConfiguration>(configuration.GetSection("MCP"));

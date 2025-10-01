@@ -1158,27 +1158,9 @@ namespace GenesysMigrationMCP.Services
         public List<DynamicsContextVariable>? ContextVariables { get; set; }
     }
     
-    public class DynamicsAgent
-    {
-        public string? Id { get; set; }
-        public string? Name { get; set; }
-        public string? Email { get; set; }
-        public string? Username { get; set; }
-        public string? Department { get; set; }
-        public string? Title { get; set; }
-        public string? State { get; set; }
-        public string? GenesysUserId { get; set; }
-        public string? GenesysSourceId { get; set; }
-        public DateTime? MigrationDate { get; set; }
-        public List<string>? WorkstreamIds { get; set; }
-        public List<DynamicsSkill>? Skills { get; set; }
-    }
+
     
-    public class DynamicsSkill
-    {
-        public string? Name { get; set; }
-        public int Proficiency { get; set; }
-    }
+
     
     public class DynamicsWorkstream
     {
